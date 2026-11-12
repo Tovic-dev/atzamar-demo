@@ -1,0 +1,67 @@
+/* Atzamar · tokens de diseño (Fase 2). Pasan tal cual a globals.css en la Fase 6.
+   Contrastes calculados con la fórmula WCAG 2.x (ver 02-propuesta/propuesta.md, «Color»). */
+:root {
+  /* Tipo. Escala de razón 1,25 en texto y salto fuerte en display (densidad media-alta). */
+  --font-sans: "Archivo", system-ui, sans-serif;
+  --font-mono: "Martian Mono", ui-monospace, monospace;
+  --fs-xs: 0.75rem;     /* 12 · etiquetas mono, unidades */
+  --fs-sm: 0.875rem;    /* 14 · tablas, notas */
+  --fs-base: 1rem;      /* 16 */
+  --fs-lg: 1.25rem;     /* 20 · entradillas */
+  --fs-xl: 1.5625rem;   /* 25 */
+  --fs-2xl: 2.4375rem;  /* 39 · títulos de sección */
+  --fs-display: clamp(2.75rem, 7.2vw, 7rem);   /* titular de portada */
+  --fs-figure: clamp(2.5rem, 5vw, 4.5rem);     /* cifras técnicas */
+  --lh-tight: 0.98;
+  --lh-snug: 1.2;
+  --lh-base: 1.55;
+  --tracking-display: -0.02em;
+  --tracking-caps: 0.08em;       /* etiquetas mono en mayúsculas */
+  --wdth-display: 112;           /* eje de anchura de Archivo en titulares */
+  --wdth-text: 100;
+
+  /* Espacio: base 4 px */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
+  --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px; --space-10: 144px;
+  --section-y: clamp(72px, 11vw, 168px);
+  --container: 1440px;
+  --gutter: clamp(20px, 4vw, 56px);
+  --col-data: 280px;             /* eje fijo 2: columna de datos y etiquetas mono */
+
+  /* Color por rol. Tema oscuro único. */
+  --bg: #0e0f11;            /* grafito */
+  --surface: #16181b;
+  --surface-2: #1f2226;
+  --line: #2c3035;          /* filetes decorativos */
+  --line-strong: #666c75;   /* bordes de controles (≥ 3:1 sobre bg y surface) */
+  --ink: #eceef0;           /* 16,5:1 sobre bg */
+  --ink-soft: #a6abb2;      /* 8,3:1 sobre bg · 6,9:1 sobre surface-2 */
+  --ink-mute: #7d838b;      /* 5,0:1 sobre bg · 4,65:1 sobre surface. No usar sobre surface-2 */
+  --accent: #edff21;        /* amarillo azufre (aprox. RAL 1016). 17,3:1 sobre bg */
+  --accent-ink: #0e0f11;    /* texto sobre el acento: 17,3:1 */
+  --error: #ffb199;
+  /* Segunda superficie: papel de plano (banco de pruebas y caso) */
+  --paper: #e2e4e7;
+  --paper-ink: #111214;     /* 16,0:1 sobre paper */
+  --paper-soft: #4b5058;    /* 6,4:1 sobre paper */
+  --paper-line: #c9ccd1;
+  --paper-grid: #d5d8dc;         /* mensajes de validación: 11,0:1 sobre bg */
+
+  /* Forma: piezas mecanizadas, no píldoras */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --shadow-1: 0 1px 0 #000, 0 8px 24px -12px rgb(0 0 0 / 0.7);
+
+  /* Movimiento (M3). Con prefers-reduced-motion todo pasa a 0 ms. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-servo: cubic-bezier(0.22, 1.16, 0.36, 1); /* la firma de movimiento: llega rápido y se asienta, como la pinza al cerrar */
+  --dur-fast: 160ms;     /* hover, foco */
+  --dur-base: 320ms;     /* chips, cambios de panel */
+  --dur-slow: 900ms;     /* entrada de la portada, por elemento */
+  --stagger: 70ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-base: 0ms; --dur-slow: 0ms; --stagger: 0ms; }
+}

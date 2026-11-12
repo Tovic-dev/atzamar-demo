@@ -1,0 +1,1396 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Atzamar · Pinzas robóticas hechas en Elgoibar (empresa ficticia)</title>
+<meta name="description" content="Demo de diseño de Arnas Studio para un fabricante industrial ficticio de Elgoibar: pinzas eléctricas para robots industriales y colaborativos.">
+<style>html,body{background:#0e0f11;color:#eceef0}</style>
+<script>document.documentElement.classList.add("js")</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='3' fill='%230e0f11'/%3E%3Cpath d='M9 6h4v20H9zM19 6h4v20h-4z' fill='%23edff21'/%3E%3C/svg%3E">
+<link rel="preload" as="image" href="media/brazo-poster.webp" fetchpriority="high">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..600&family=Martian+Mono:wdth,wght@87.5,400..500&display=swap" rel="stylesheet"> <!-- taste-skill-ignore: mono solo en datos, decisión de Mikel del 12 nov 2026 -->
+<link rel="stylesheet" href="tokens.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<style>
+/* ---------- base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--font-sans);font-size:1.0625rem;line-height:1.55;font-stretch:100%;-webkit-font-smoothing:antialiased;overflow-x:clip}
+img{display:block;max-width:100%}
+a{color:inherit}
+h1,h2,h3{font-weight:600;margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.wrap{max-width:var(--container);margin-inline:auto;padding-inline:var(--gutter)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+main{overflow-x:clip}
+.big{font-stretch:112%;font-weight:600;letter-spacing:-.025em;line-height:.98;text-wrap:balance}
+.h2{font-size:clamp(2rem,3.4vw,3.25rem)}   /* nivel sección */
+.capitulo .big,.lugar .big,.caso .big,#h2-red{font-size:clamp(3rem,7.2vw,7.5rem);letter-spacing:-.035em} /* nivel capítulo */
+.lead{font-size:clamp(1.125rem,1.4vw,1.375rem);line-height:1.45;color:var(--ink-soft);max-width:44ch}
+.note{font-size:.875rem;color:var(--ink-mute)}
+
+/* canvas compartido por las tres escenas 3D */
+#gl{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:0;transition:opacity .5s var(--ease-out)}
+.is-3d #gl{opacity:1}
+html:not(.has-3d) #gl{display:none}
+
+/* aviso y navegación: una barra plana, sin flotar */
+.aviso{position:relative;z-index:3;margin:0;padding:8px var(--gutter);background:var(--surface);color:var(--ink-soft);font-size:.875rem;text-align:center}
+.nav{position:sticky;top:0;z-index:20;background:var(--bg)}
+.nav .wrap{height:64px;display:flex;align-items:center;gap:var(--space-6)}
+.nav__marca{font-weight:600;font-stretch:125%;letter-spacing:.03em;text-decoration:none;font-size:1.125rem}
+.nav__links{display:flex;gap:var(--space-6);margin:0 auto;padding:0;list-style:none}
+.nav__links a{font-size:.9375rem;color:var(--ink-soft);text-decoration:none;padding:10px 0;transition:color var(--dur-fast)}
+.nav__links a:hover{color:var(--ink)}
+.nav__lang{display:flex;gap:var(--space-3);margin:0;color:var(--ink-mute);font-size:.875rem}
+.nav__lang [aria-current]{color:var(--ink)}
+
+/* botones: rectos, un solo relleno */
+.btn{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 24px;font:inherit;font-weight:600;font-size:1rem;text-decoration:none;border:0;cursor:pointer;transition:background-color var(--dur-fast),color var(--dur-fast),transform var(--dur-fast);white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn--pri{background:var(--ink);color:var(--bg)}
+.btn--pri:hover{background:#fff}
+.btn--sec{background:var(--surface-2);color:var(--ink)}
+.btn--sec:hover{background:#2a2e33}
+.btn--sm{height:40px;padding:0 16px;font-size:.9375rem}
+.btn[aria-disabled=true]{cursor:not-allowed}
+
+/* tablas de datos: el único sitio con mono y con filetes */
+.datos{border-collapse:collapse;width:100%;font-size:.9375rem}
+.datos th{text-align:left;font-weight:400;color:var(--ink-mute);padding:8px 16px 8px 0;border-bottom:1px solid var(--line)}
+.datos td{padding:8px 0;border-bottom:1px solid var(--line);text-align:right;font-family:var(--font-mono);font-stretch:87.5%;font-variant-numeric:tabular-nums} /* taste-skill-ignore: mono solo en datos y lecturas, decisión de Mikel del 12 nov 2026 */
+
+/* entrada escalonada */
+@keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+[data-rise]{animation:rise .9s var(--ease-out) both;animation-delay:calc(.1s + var(--i,0)*70ms)}
+.js [data-in]{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease-out),transform .7s var(--ease-out);transition-delay:calc(var(--i,0)*80ms)}
+.js [data-in].is-in{opacity:1;transform:none}
+/* titulares: una pasada de fresa los descubre de izquierda a derecha */
+.js .big[data-in]{position:relative;opacity:1;transform:none;padding-block:.08em .14em;margin-block:-.08em -.14em;clip-path:inset(0 100% 0 0);transition:clip-path 1000ms var(--ease-out);transition-delay:calc(var(--i,0)*80ms)}
+.js .big[data-in].is-in{clip-path:inset(0 0 0 0)}
+.js .big[data-in]::after{content:"";position:absolute;top:-.05em;bottom:-.1em;left:0;width:3px;background:var(--accent);opacity:0;pointer-events:none}
+.js .big[data-in].is-in::after{animation:fresa 1000ms var(--ease-servo) both;animation-delay:calc(var(--i,0)*80ms)}
+@keyframes fresa{0%{left:0;opacity:1}80%{opacity:1}100%{left:100%;opacity:0}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:calc(100dvh - 100px);display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--space-5);padding:var(--space-8) var(--gutter) var(--space-7);max-width:var(--container);margin-inline:auto}
+.hero__copy{grid-column:1/7;grid-row:1;align-self:end;position:relative;z-index:2}
+.hero h1{font-size:clamp(3rem,7vw,7rem);margin-bottom:var(--space-5)}
+.hero h1 span{display:block}
+.hero .lead{margin:0 0 var(--space-6)}
+.hero__cta{display:flex;flex-wrap:wrap;gap:var(--space-3)}
+.hero__stage{grid-column:6/11;grid-row:1;position:relative;display:grid;place-items:center}
+.hero__poster{position:relative;z-index:1;height:clamp(400px,calc(100svh - 230px),820px);width:auto;aspect-ratio:4/5;transition:opacity .5s var(--ease-out)}
+.is-3d .hero__poster{opacity:0}
+.hero__placa{grid-column:10/13;grid-row:1;align-self:end;justify-self:end;width:280px;position:relative;z-index:2}
+
+/* ---------- cifra ---------- */
+.cifra{position:relative;z-index:2;background:var(--surface);padding-block:var(--space-9)}
+.cifra__grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:var(--space-8);align-items:end}
+.cifra__xl{display:flex;align-items:baseline;gap:.1em;font-weight:600;font-stretch:112%;font-size:clamp(5rem,15vw,15rem);line-height:.82;letter-spacing:-.05em;font-variant-numeric:tabular-nums;white-space:nowrap;margin:var(--space-5) 0 var(--space-6)}
+.cifra__xl small{font-size:.24em;letter-spacing:0;color:var(--ink-soft)}
+.cifra__tabla{font-size:1rem;margin-bottom:var(--space-6)}
+.cifra__tabla th{padding-block:14px}.cifra__tabla td{padding-block:14px;white-space:nowrap}
+
+/* ---------- capítulo ---------- */
+.capitulo{position:relative;z-index:2;background:var(--bg);padding-block:var(--space-10) var(--space-9)}
+.capitulo .big{font-size:clamp(3rem,8.4vw,9rem);max-width:13ch}
+.capitulo .lead{margin-top:var(--space-6)}
+
+/* ---------- ciclo del brazo (firma) ---------- */
+.ciclo{position:relative}
+.ciclo__figs{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-4);margin:var(--space-7) 0;padding:0;list-style:none}
+.ciclo__figs img{width:100%;height:auto;background:var(--surface)}
+.ciclo__figs figcaption{color:var(--ink-soft);margin-top:var(--space-2);font-size:.9375rem}
+.ciclo__figs figure{margin:0}
+.pasos{margin:0;padding:0;list-style:none}
+.pasos li{padding:var(--space-4) 0}
+.pasos h3{font-size:1.25rem}
+.pasos p{margin:6px 0 0;color:var(--ink-soft);max-width:46ch}
+.has-3d .ciclo{height:400vh}
+.has-3d .ciclo__sticky{position:sticky;z-index:2;top:64px;height:calc(100svh - 64px);display:grid;grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto 1fr;column-gap:var(--space-7);padding:var(--space-7) var(--gutter);max-width:var(--container);margin-inline:auto}
+.has-3d .ciclo__head{grid-column:1;grid-row:1}
+.has-3d .ciclo__stage{grid-column:1;grid-row:2}
+.has-3d .ciclo__figs{display:none}
+.has-3d .ciclo__side{grid-column:2;grid-row:1/3;align-self:stretch;display:flex;flex-direction:column;justify-content:center;background:var(--bg);margin:calc(-1 * var(--space-7)) 0;padding:var(--space-7) 0 var(--space-7) var(--space-6);box-shadow:0 0 0 100vmax var(--bg);clip-path:inset(0 -100vmax 0 0)} /* columna con fondo propio hasta el borde derecho: la mesa 3D no pasa por debajo de las lecturas */
+.has-3d .pasos{position:relative;padding-bottom:9rem}
+.has-3d .pasos li{padding:7px 0}
+.has-3d .pasos h3{font-size:1.125rem;font-weight:500;color:var(--ink-mute);transition:color var(--dur-base)}
+.has-3d .pasos li.is-on h3{color:var(--ink)}
+.has-3d .pasos li.is-on h3::before{content:"";display:inline-block;width:10px;height:10px;margin-right:12px;background:var(--accent);vertical-align:1px}
+.has-3d .pasos p{position:absolute;left:0;right:0;bottom:0;height:8rem;margin:0;padding-top:var(--space-4);font-size:1.0625rem;color:var(--ink);opacity:0;transition:opacity var(--dur-base)}
+.has-3d .pasos li.is-on p{opacity:1}
+.lectura{display:none}
+.has-3d .lectura{display:table;margin-top:var(--space-5)}
+.lectura th:nth-child(3){padding-left:var(--space-6)}
+.lectura th,.lectura td{padding-block:10px}
+.lectura td{white-space:nowrap}
+
+.tcp{display:none}
+.has-3d .tcp{display:block;position:fixed;left:0;top:0;z-index:3;pointer-events:none;opacity:0;transition:opacity var(--dur-base);will-change:transform}
+.has-3d .tcp.is-on{opacity:1}
+.tcp span{position:absolute;left:14px;top:-40px;white-space:nowrap;padding:4px 8px;background:var(--ink);color:var(--bg);font-family:var(--font-mono);font-stretch:87.5%;font-size:.8125rem;font-variant-numeric:tabular-nums} /* taste-skill-ignore: mono solo en datos y lecturas, decisión de Mikel del 12 nov 2026 */
+
+/* ---------- simulador (la cosa viva) ---------- */
+.sim{position:relative;padding-block:var(--space-9)}
+.sim__grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:var(--space-8);align-items:center}
+.sim__form{display:grid;gap:var(--space-6);margin-top:var(--space-7)}
+.campo label{display:flex;justify-content:space-between;align-items:baseline;font-weight:500;margin-bottom:var(--space-2)}
+.campo output{font-weight:600;font-stretch:112%;font-size:clamp(2rem,3vw,2.75rem);line-height:1;font-variant-numeric:tabular-nums}
+.campo output small{font-size:.45em;color:var(--ink-soft);font-weight:400}
+.campo input[type=range]{width:100%;height:44px;accent-color:var(--accent);cursor:pointer}
+.has-3d .sim{height:calc(100svh - 64px);min-height:600px;padding-block:var(--space-6);box-sizing:border-box} /* el configurador cabe siempre en una pantalla */
+.has-3d .sim__grid{height:100%;align-items:stretch}
+.sim__izq{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.sim__izq .h2{font-size:clamp(2rem,3.1vw,3.25rem)}
+.atajos{display:flex;flex-wrap:wrap;gap:8px;margin:var(--space-5) 0 0;padding:0;border:0}
+.atajo{font:inherit;font-size:.875rem;font-weight:500;color:var(--ink);background:var(--surface-2);border:1px solid transparent;height:40px;padding:0 10px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background-color var(--dur-fast),border-color var(--dur-fast)}
+.atajo small{font-size:.875rem;color:var(--ink-soft);font-weight:400}
+.atajo:hover{background:#2a2e33}
+.atajo[aria-pressed=true]{border-color:var(--accent);background:var(--bg)}
+.sim__izq .sim__form{gap:var(--space-4);margin-top:var(--space-5)}
+.sim__izq .campo label{margin-bottom:0}
+.sim__izq .campo output{font-size:clamp(1.5rem,2vw,1.875rem)}
+.sim__res{position:relative;z-index:2;margin-top:var(--space-5);padding-top:var(--space-5);border-top:1px solid var(--line-strong)} /* fondo igual a la página: tapa el brazo sin dibujar una caja */
+.sim__res .sim__modelo{font-weight:600;font-stretch:125%;font-size:clamp(2.75rem,4.4vw,4.5rem);line-height:.9;letter-spacing:-.035em;margin:0 0 var(--space-5);color:var(--ink);white-space:nowrap}
+.sim__res .sim__veredicto{font-weight:500;font-size:1.25rem;line-height:1.3;margin:0 0 var(--space-2);color:var(--ink)}
+.sim__res p{margin:0;color:var(--ink-soft);max-width:46ch}
+.sim__der{display:flex;flex-direction:column;min-height:0}
+.sim__stage{min-height:min(70vh,640px);position:relative}
+.has-3d .sim__stage{flex:1;min-height:0}
+.lect{position:relative;z-index:2;background:linear-gradient(rgb(14 15 17 / 0),var(--bg) 38%);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-5);margin:-48px 0 0;padding-top:56px} /* barra de lectura: siempre a la vista, bajo el brazo */
+.lect > div{display:grid;gap:4px;align-content:start}
+.lect dt{font-size:.875rem;color:var(--ink-mute)}
+.lect dd{margin:0;display:grid;gap:2px}
+.lect b{font-family:var(--font-mono);font-stretch:87.5%;font-weight:500;font-size:1.375rem;font-variant-numeric:tabular-nums;color:var(--ink)} /* taste-skill-ignore: mono solo en datos y lecturas, decisión de Mikel del 12 nov 2026 */
+.lect dd span{font-size:.875rem;color:var(--ink-mute)}
+.medidor{position:relative;height:3px;background:var(--line);margin-top:8px}
+.medidor i{position:absolute;inset:0 auto 0 0;width:calc(min(var(--u,0),1) * 100%);background:var(--accent);transition:width var(--dur-base) var(--ease-out)}
+.is-over .medidor i{background:var(--error)}
+.is-over b{color:var(--error)}
+.sim__nota{position:relative;z-index:2;margin:var(--space-3) 0 0}
+.sim__fallback{width:100%;height:auto}
+.has-3d .sim__fallback{display:none}
+
+/* ---------- sectores: catálogo de especímenes ---------- */
+.sectores{position:relative;z-index:2;background:var(--bg);padding-block:var(--space-8) var(--space-10)}
+.sectores__lead{margin:var(--space-4) 0 var(--space-7)}
+/* cuatro paneles con su pieza a la vista: el elegido se abre, los otros se quedan estrechos */
+.secs{display:flex;gap:2px;height:clamp(500px,calc(100svh - 300px),660px)}
+.sec{position:relative;flex:1 1 0;min-width:0;overflow:hidden;background:var(--surface);transition:flex-grow 650ms var(--ease-servo),background-color var(--dur-base)}
+.sec.is-on{flex-grow:3.4;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);grid-template-rows:auto minmax(0,1fr);background:var(--surface-2)}
+.sec::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform 600ms var(--ease-out);z-index:3}
+.sec.is-on::before{transform:none}
+.sec__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 85%;opacity:.85;transition:opacity var(--dur-base),transform 650ms var(--ease-servo)}
+.sec.is-on .sec__img{position:relative;grid-column:1;grid-row:2;opacity:1;object-fit:cover;object-position:50% 45%;margin-top:var(--space-4);height:calc(100% - var(--space-4))}
+.sec__btn{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-start;gap:var(--space-3);align-items:flex-start;text-align:left;font:inherit;color:var(--ink);background:linear-gradient(to bottom,rgb(22 24 27 / .96) 18%,rgb(22 24 27 / 0) 50%);border:0;padding:var(--space-5);cursor:pointer}
+.sec.is-on .sec__btn{position:relative;inset:auto;grid-column:1/-1;grid-row:1;background:none;cursor:default;flex-direction:row;align-items:baseline;justify-content:flex-start;gap:var(--space-4);padding:var(--space-6) var(--space-6) 0}
+.sec__n{font-family:var(--font-mono);font-stretch:87.5%;font-size:.875rem;color:var(--ink-mute)} /* taste-skill-ignore: mono solo en datos, decisión de Mikel del 12 nov 2026 */
+.sec__pie{display:grid;gap:4px}
+.sec__nom{font-weight:600;font-stretch:112%;font-size:1.25rem;letter-spacing:-.01em;line-height:1.1}
+.sec.is-on .sec__nom{font-size:clamp(1.75rem,2.6vw,2.5rem)}
+.sec__pieza{font-size:.875rem;color:var(--ink-soft)}
+.sec.is-on .sec__pieza{display:none}
+.sec__mas{position:absolute;bottom:var(--space-5);left:var(--space-5);width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line-strong);font-size:1.25rem;line-height:1;transition:background-color var(--dur-fast),color var(--dur-fast),border-color var(--dur-fast)}
+.sec.is-on .sec__mas{display:none}
+.sec:not(.is-on):hover{flex-grow:1.65;background:var(--surface-2)}
+.sec:not(.is-on):hover .sec__img{opacity:1;transform:translateY(-14px) scale(1.04)} /* la pinza levanta la pieza */
+.sec:not(.is-on):hover .sec__mas{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.sec__det{grid-column:2;grid-row:2;padding:var(--space-5) var(--space-6) var(--space-6) 0;display:flex;flex-direction:column;min-height:0;animation:aparece 500ms 200ms var(--ease-out) both}
+.sec__det[hidden]{display:none}
+@keyframes aparece{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sec__det h3{font-size:1.25rem;margin-bottom:var(--space-2)}
+.sec__det p{margin:0 0 var(--space-4);color:var(--ink-soft);max-width:44ch}
+.sec__det .rec{color:var(--ink);font-weight:500}
+.sec__det .rec b{display:inline-block;background:var(--ink);color:var(--bg);font-weight:600;padding:2px 8px;margin-right:6px}
+.sec__det .datos{margin-bottom:var(--space-5)}
+.sec__det .btn{align-self:flex-start;margin-top:auto;background:none;border:1px solid var(--line-strong)}
+.sec__det .btn:hover{border-color:var(--accent);background:none}
+
+/* ---------- Elgoibar: capítulo con foto ---------- */
+.lugar{position:relative;z-index:2;min-height:100svh;display:grid;align-items:end;color:#fff;background:#1a1612}
+.lugar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lugar__panel{background:var(--bg);padding:var(--space-7) var(--space-7) var(--space-6);max-width:960px;margin-left:calc(-1 * var(--space-7))}
+.lugar .wrap{position:relative;z-index:2;width:100%;padding-block:0}
+.lugar .big{max-width:18ch;font-size:clamp(3rem,5.6vw,5.75rem)}
+.lugar .lead{color:#e6e6e6;margin-top:var(--space-5)}
+.credito{font-size:.8125rem;color:#cfcfcf;margin-top:var(--space-6)}
+.credito a{color:inherit}
+
+/* ---------- explosionado ---------- */
+.desp{position:relative}
+.desp__figs{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin:var(--space-7) 0;padding:0;list-style:none}
+.desp__figs img{width:100%;height:auto;background:var(--surface)}
+.desp__figs figure{margin:0}
+.desp__figs figcaption{color:var(--ink-soft);margin-top:var(--space-2);font-size:.9375rem}
+.piezas{margin:0;padding:0;list-style:none;columns:2;column-gap:var(--space-7)}
+.piezas li{break-inside:avoid;padding:var(--space-3) 0}
+.piezas h3{font-size:1.125rem}
+.piezas p{margin:4px 0 0;color:var(--ink-soft);font-size:.9375rem;max-width:42ch}
+.has-3d .desp{height:400vh;background-color:color-mix(in srgb,var(--paper) calc(var(--plano,0) * 100%),var(--bg))}
+.has-3d .desp::before{content:"";position:absolute;inset:0;opacity:var(--plano,0);background-image:linear-gradient(var(--paper-grid) 1px,transparent 1px),linear-gradient(90deg,var(--paper-grid) 1px,transparent 1px);background-size:32px 32px;background-position:-1px -1px;pointer-events:none}
+.has-3d .desp h2,.has-3d .desp .piezas{transition:color 500ms var(--ease-out)}
+.has-3d .desp.is-plano h2{color:var(--paper-ink)}
+.has-3d .desp.is-plano .piezas h3{color:var(--paper-soft)}
+.has-3d .desp.is-plano .piezas p{color:var(--paper-ink)}
+.has-3d .desp__sticky{position:sticky;z-index:2;top:64px;height:calc(100svh - 64px);display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);grid-template-rows:auto 1fr;column-gap:var(--space-7);padding:var(--space-7) var(--gutter);max-width:var(--container);margin-inline:auto}
+.has-3d .desp__head{grid-column:1;grid-row:1} /* título y lista en el mismo eje; la pinza ocupa la columna derecha entera */
+.has-3d .desp__stage{grid-column:2;grid-row:1/3}
+.has-3d .desp__figs{display:none}
+.has-3d .piezas{grid-column:1;grid-row:2;align-self:start;margin-top:var(--space-7);max-width:340px;columns:1;position:relative;padding-bottom:7.5rem}
+.has-3d .piezas li{padding:5px 0}
+.has-3d .piezas h3{font-weight:500;color:var(--ink-mute);transition:color var(--dur-base)}
+.has-3d .piezas li.is-on h3{color:var(--ink)}
+.has-3d .piezas li.is-on h3::before{content:"";display:inline-block;width:10px;height:10px;margin-right:12px;background:var(--accent);vertical-align:1px}
+.has-3d .piezas p{position:absolute;left:0;right:0;bottom:0;height:6.5rem;margin:0;font-size:1rem;color:var(--ink);opacity:0;transition:opacity var(--dur-base)}
+.has-3d .piezas li.is-on p{opacity:1}
+.etiquetas{display:none}
+.has-3d .etiquetas{display:block;position:fixed;inset:0;z-index:3;pointer-events:none}
+.etiqueta{position:absolute;left:0;top:0;padding:3px 8px;background:var(--surface-2);color:var(--ink-soft);font-size:.8125rem;white-space:nowrap;opacity:0;transition:opacity .25s,background-color .25s,color .25s;will-change:transform}
+.etiqueta.is-on{background:var(--accent);color:var(--accent-ink)}
+.etiquetas.is-plano .etiqueta{background:var(--paper);color:var(--paper-ink);border:1px solid var(--paper-ink);font-size:.875rem;padding:4px 10px}
+.etiquetas.is-plano .etiqueta::before{background:var(--paper-ink);transform-origin:right center;transform:skewY(0)}
+.etiquetas.is-plano .etiqueta::after{background:var(--paper);border:1px solid var(--paper-ink);border-radius:50%;width:9px;height:9px;top:calc(50% - 5px + var(--dy,0px))}
+.etiquetas.is-plano .etiqueta.izq::before{right:auto;left:100%}
+.etiquetas.is-plano .etiqueta.izq::after{left:auto;right:calc(-1 * var(--lead,0px) - 5px)}
+.etiqueta::before{content:"";position:absolute;right:100%;top:50%;width:var(--lead,0px);height:1px;background:var(--accent)}
+.etiqueta::after{content:"";position:absolute;top:calc(50% - 3px);left:calc(-1 * var(--lead,0px) - 3px);width:7px;height:7px;background:var(--accent)}
+
+/* ---------- banco de pruebas: el informe ---------- */
+.banco{position:relative;z-index:2;color:var(--paper-ink);padding-block:var(--space-9);background-color:var(--paper);background-image:linear-gradient(var(--paper-grid) 1px,transparent 1px),linear-gradient(90deg,var(--paper-grid) 1px,transparent 1px);background-size:32px 32px;background-position:-1px -1px} /* papel de plano: la parte medida de la página */
+.banco .lead{color:var(--paper-soft)}
+.banco__grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:var(--space-8);align-items:start}
+.banco .lead{margin-top:var(--space-5)}
+.banco__foto{margin:var(--space-7) 0 0;max-width:360px}
+.banco__foto img{width:100%;height:auto}
+.banco__foto figcaption{font-size:.8125rem;color:var(--paper-soft);margin-top:var(--space-2)}
+.banco__foto figcaption a{color:inherit}
+.informe{background:#f7f8f9;color:#111214;padding:var(--space-7) var(--space-7) var(--space-9);transform:rotate(-1.2deg);clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),96% 100%,92% calc(100% - 14px),88% 100%,84% calc(100% - 14px),80% 100%,76% calc(100% - 14px),72% 100%,68% calc(100% - 14px),64% 100%,60% calc(100% - 14px),56% 100%,52% calc(100% - 14px),48% 100%,44% calc(100% - 14px),40% 100%,36% calc(100% - 14px),32% 100%,28% calc(100% - 14px),24% 100%,20% calc(100% - 14px),16% 100%,12% calc(100% - 14px),8% 100%,4% calc(100% - 14px),0 100%)}
+.informe h3{font-size:1.5rem;font-stretch:112%;margin-bottom:4px}
+.informe > p{margin:0 0 var(--space-5);color:#4b5058;font-size:.9375rem}
+.informe .datos th{color:#4b5058;border-color:#c9ccd1}
+.informe .datos td{border-color:#c9ccd1}
+.informe__ok{margin-top:var(--space-5);display:flex;justify-content:space-between;align-items:center;gap:var(--space-4);font-weight:600}
+.informe__ok b{background:#111214;color:#edff21;padding:6px 12px;font-stretch:112%}
+
+/* ---------- caso ---------- */
+.caso{position:relative;z-index:2;background:var(--paper);color:var(--paper-ink);padding-block:var(--space-10)}
+
+.caso__sub{font-size:clamp(1.25rem,2vw,1.75rem);margin:var(--space-3) 0 var(--space-2);font-weight:500}
+.caso .note{color:#4b5058}
+.caso__relato{font-size:clamp(1.125rem,1.4vw,1.375rem);line-height:1.5;color:#2c3035;max-width:60ch;margin:var(--space-6) 0 var(--space-9)}
+.barras{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-7)}
+.barra__k{margin:0 0 var(--space-3);font-weight:600;font-size:1.25rem}
+.barra__fila{display:grid;grid-template-columns:64px minmax(0,1fr) 96px;align-items:center;gap:var(--space-4);height:36px}
+.barra__eti{color:#4b5058;font-size:.9375rem}
+.barra__track{height:14px;position:relative}
+.barra__track i{position:absolute;inset:0 auto 0 0;transition:width 1s var(--ease-out)}
+.barra__a{background:#9aa0a8;width:var(--antes)}
+.barra__d{background:var(--bg);width:max(var(--despues),6px)}
+.js .barra:not(.is-in) .barra__track i{width:0}
+.js .barra.is-in .barra__d{transition-delay:.2s}
+.barra__v{font-family:var(--font-mono);font-stretch:87.5%;font-weight:500;font-size:1.25rem;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums} /* taste-skill-ignore: mono solo en datos y lecturas, decisión de Mikel del 12 nov 2026 */
+.barra__v--d{background:var(--paper-ink);color:var(--paper);justify-self:end;padding:2px 6px}
+.barra__v--n{font-weight:700}
+
+/* ---------- globo ---------- */
+.red{position:relative;padding-block:var(--space-9) var(--space-10)}
+.red__valle{position:relative;z-index:2;margin:0 0 var(--space-8)}
+.red__valle img{width:100%;height:clamp(160px,18vw,300px);object-fit:cover}
+.red__valle figcaption{position:absolute;right:8px;bottom:8px;font-size:.8125rem;color:var(--ink-soft);background:rgb(14 15 17 / .8);padding:3px 8px;margin:0}
+.red__valle figcaption a{color:inherit}
+.red__grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:var(--space-6) var(--space-7);align-items:start}
+.red__head{position:relative;z-index:2;grid-column:1/-1;display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:var(--space-7);align-items:end}
+.red__head .lead{margin:0}
+.red__stage{grid-column:1;height:min(calc(100svh - 160px),760px)}
+.red__panel{grid-column:2}
+.red__panel{position:relative;z-index:2}
+.red__tabla td:first-child,.red__tabla td:nth-child(2){text-align:left;font-family:var(--font-sans);font-stretch:100%}
+.red__tabla button{font:inherit;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.red__tabla button:hover{color:var(--accent)}
+.red__tabla tr.is-on button{color:var(--accent);font-weight:600}
+.ficha{margin-top:var(--space-5);padding:var(--space-5);background:var(--surface-2);min-height:9.5rem}
+.ficha h3{font-size:1.25rem;margin-bottom:4px}
+.ficha p{margin:0;color:var(--ink-soft);font-size:.9375rem}
+.ficha dl{display:grid;grid-template-columns:auto 1fr;gap:6px var(--space-4);margin:var(--space-4) 0 0;font-size:.9375rem}
+.ficha dt{color:var(--ink-mute)}
+.ficha dd{margin:0}
+.ciudades{display:none}
+.has-3d .ciudades{display:block;position:fixed;inset:0;z-index:3;pointer-events:none}
+.ciudad{position:absolute;left:0;top:0;padding:2px 7px;background:var(--surface-2);color:var(--ink-soft);font-size:.8125rem;white-space:nowrap;opacity:0;transition:opacity .2s;will-change:transform}
+.ciudad.is-hq{background:var(--ink);color:var(--bg)}
+.ciudad.is-on{background:var(--accent);color:var(--accent-ink)}
+
+/* ---------- cierre y pie ---------- */
+.cierre{position:relative;z-index:2;background:var(--surface);padding-block:var(--space-10)}
+.has-3d .hoja-bajo{position:sticky}
+.has-3d .hoja-bajo::after{content:"";position:absolute;inset:0;background:#000;opacity:var(--tapa,0);pointer-events:none;z-index:5}
+.has-3d .hoja-sobre{z-index:3}
+.cierre .lead{margin:var(--space-5) 0 var(--space-8)}
+.cierre__frase{font-size:clamp(1.5rem,2.4vw,2.25rem);line-height:1.65;font-weight:400;letter-spacing:-.01em;color:var(--ink-soft);max-width:40ch;margin:0 0 var(--space-7)}
+.hueco{position:relative;display:inline-block;color:var(--ink);font-weight:500;border-bottom:2px solid var(--ink-soft);line-height:1.15}
+.nw{white-space:nowrap}
+.hueco small{position:absolute;left:0;top:100%;margin-top:7px;font-size:.875rem;font-weight:400;letter-spacing:0;color:var(--ink-mute);line-height:1;white-space:nowrap}
+.cierre__pie{display:flex;align-items:center;gap:var(--space-5);flex-wrap:wrap}
+.cierre__pie .note{margin:0}
+.pie{position:relative;z-index:2;background:var(--bg);padding-block:var(--space-8) var(--space-6);color:var(--ink-soft);font-size:.9375rem}
+.cajetin{display:grid;grid-template-columns:minmax(0,2.2fr) repeat(3,minmax(0,1fr));gap:1px;background:var(--line-strong);border:1px solid var(--line-strong);margin:0 0 var(--space-6)} /* cajetín de plano: así firma un taller sus dibujos */
+.cajetin > div{background:var(--bg);padding:var(--space-4) var(--space-5);display:grid;gap:6px;align-content:start}
+.cajetin dt{font-size:.75rem;color:var(--ink-mute)}
+.cajetin dd{margin:0;color:var(--ink)}
+.cajetin__marca{grid-row:span 2}
+.cajetin__marca dd{font-weight:600;font-stretch:125%;font-size:clamp(2rem,3.4vw,3rem);letter-spacing:-.02em;line-height:1}
+.cajetin__marca p{color:var(--ink-soft);margin-top:var(--space-2)}
+.cajetin__aviso{grid-column:2/-1}
+.cajetin .num{font-family:var(--font-mono);font-stretch:87.5%;font-variant-numeric:tabular-nums} /* taste-skill-ignore: mono solo en datos, decisión de Mikel del 12 nov 2026 */
+.pie p{margin:0}
+.pie a{color:inherit}
+.creditos{margin-top:var(--space-5);font-size:.875rem;color:var(--ink-mute);max-width:68ch}
+
+@media (max-width:899px){
+  .nav__links{display:none}
+  .nav .wrap{gap:var(--space-3)}
+  .nav__lang{margin-left:auto}
+  .hero{display:flex;flex-direction:column;padding-top:var(--space-6);min-height:0}
+  .hero__copy{display:contents}
+  .hero h1,.hero .lead,.hero__cta,.hero__placa{position:relative;z-index:2}
+  .hero h1{order:1;margin-bottom:0;font-size:clamp(2.75rem,13vw,4.5rem)}
+  .hero__stage{order:2;margin-block:var(--space-2)}
+  .hero__poster{height:52vh;min-height:320px}
+  .hero .lead{order:3}
+  .hero__cta{order:4;flex-direction:column}
+  .hero__cta .btn{width:100%}
+  .hero__placa{order:5;width:100%;margin-top:var(--space-6)}
+  .cifra__grid,.sim__grid,.banco__grid,.red__grid{grid-template-columns:1fr;gap:var(--space-6)}
+  .red__head{grid-template-columns:1fr;gap:var(--space-4)}
+  .red__panel{grid-column:1}
+  .cierre__frase{font-size:1.5rem;line-height:2.3}
+  .cajetin{grid-template-columns:1fr 1fr}
+  .cajetin__marca,.cajetin__aviso,.cajetin > div:nth-child(2){grid-column:1/-1;grid-row:auto}
+  .sim__modelo{white-space:normal}
+  .lect{grid-template-columns:1fr 1fr;row-gap:var(--space-5)}
+  .secs{flex-direction:column;height:auto}
+  .sec{flex:none;min-height:88px}
+  .sec.is-on{display:block}
+  .sec__img{inset:0 auto 0 0;width:88px;opacity:1}
+  .sec.is-on .sec__img{width:100%;height:260px}
+  .sec__btn{background:none;justify-content:center;gap:2px;padding:var(--space-4) var(--space-8) var(--space-4) calc(88px + var(--space-4))}
+  .sec__btn .sec__n{display:none}
+  .sec.is-on .sec__btn{padding:var(--space-5) var(--space-5) var(--space-3)}
+  .sec.is-on .sec__btn .sec__n{display:inline}
+  .sec__mas{top:50%;bottom:auto;left:auto;right:var(--space-4);margin-top:-16px}
+  .sec__det{padding:var(--space-4) var(--space-5) var(--space-6)}
+  .cifra__xl{font-size:24vw}
+  .capitulo .big,.lugar .big,.caso .big,#h2-red{font-size:clamp(2.25rem,10vw,3rem)}
+  .caso__relato{margin:var(--space-5) 0 var(--space-7)}
+  .barra__fila{grid-template-columns:52px minmax(0,1fr) auto;gap:var(--space-3)}
+  .barra__v{font-size:1rem}
+  .ciclo__figs,.desp__figs{grid-template-columns:1fr}
+  .piezas{columns:1}
+  .sim__stage{display:none}
+  .informe{padding:var(--space-6) var(--space-5) var(--space-8);transform:none}
+  .lugar{min-height:80vh}
+  .desp{padding-top:var(--space-9)}
+  .lugar__panel{margin-inline:calc(-1 * var(--gutter));padding:var(--space-6) var(--gutter)}
+  .red__stage{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  [data-rise]{animation:none}
+  .js [data-in]{opacity:1;transform:none;transition:none;clip-path:none}
+  .js .big[data-in]::after{display:none}
+}
+</style>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+
+<p class="aviso">Empresa ficticia. Demo de diseño de Arnas Studio.</p>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="nav__marca" href="#inicio" aria-label="Atzamar, inicio">ATZAMAR</a>
+    <ul class="nav__links">
+      <li><a href="#ciclo">El ciclo</a></li>
+      <li><a href="#sim">¿Me sirve?</a></li>
+      <li><a href="#elgoibar">Elgoibar</a></li>
+      <li><a href="#red">Distribuidores</a></li>
+    </ul>
+    <p class="nav__lang" aria-label="Idioma"><span aria-current="true">ES</span><span>EN</span><span>EU</span></p>
+    <a class="btn btn--pri btn--sm" href="#contacto">Pedir propuesta</a>
+  </div>
+</header>
+
+<main id="inicio">
+  <!-- ============ HERO ============ -->
+  <section class="hero" aria-labelledby="h1">
+    <div class="hero__copy">
+      <h1 id="h1" class="big"><span data-rise style="--i:1">Agarre que</span><span data-rise style="--i:2">se repite.</span></h1>
+      <p class="lead" data-rise style="--i:3">La AZ-E 80 M, en un brazo de seis ejes. Pinzas eléctricas para robots industriales y colaborativos, diseñadas y mecanizadas en Elgoibar.</p>
+      <div class="hero__cta" data-rise style="--i:4">
+        <a class="btn btn--pri" href="#contacto">Pedir propuesta técnica</a>
+        <a class="btn btn--sec" href="#sim">¿Me sirve para mi pieza?</a>
+      </div>
+    </div>
+    <div class="hero__stage">
+      <img class="hero__poster" id="poster" src="media/brazo-poster.webp" width="1200" height="1500" fetchpriority="high" decoding="async"
+           alt="Brazo robótico blanco de seis ejes con la pinza Atzamar AZ-E 80 M en la muñeca, con los dedos abiertos.">
+    </div>
+    <table class="datos hero__placa" data-rise style="--i:5">
+      <caption class="sr">Datos de la pinza AZ-E 80 M</caption>
+      <tr><th scope="row">Carrera</th><td>2 × 17 mm</td></tr>
+      <tr><th scope="row">Fuerza</th><td>40–420 N</td></tr>
+      <tr><th scope="row">Peso</th><td>1,15 kg</td></tr>
+      <tr><th scope="row">Protección</th><td>IP 54</td></tr>
+    </table>
+  </section>
+
+  <!-- ============ CIFRA ============ -->
+  <section class="cifra" aria-labelledby="h2-cifra">
+    <div class="wrap cifra__grid">
+      <div>
+        <h2 id="h2-cifra" class="h2 big" data-in>Siempre en el mismo sitio.</h2>
+        <p class="cifra__xl" data-in style="--i:1"><span data-to="0.02" data-dec="2" data-pre="±">±0,02</span><small>mm</small></p>
+        <p class="lead" data-in style="--i:2">Es la repetibilidad de la AZ-E 80 M: la diferencia máxima entre dos cierres, ciclo tras ciclo.</p>
+      </div>
+      <div>
+        <table class="datos cifra__tabla" data-in>
+          <caption class="sr">Otras cifras de la AZ-E 80 M</caption>
+          <tr><th scope="row">Fuerza de agarre, regulable desde 40 N</th><td>420 N</td></tr>
+          <tr><th scope="row">Ciclos garantizados sin cambiar guías ni husillo</th><td>10 millones</td></tr>
+          <tr><th scope="row">Cambio de dedos, dos tornillos por mordaza</th><td>45 s</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CAPÍTULO: EN LA LÍNEA ============ -->
+  <section class="capitulo" aria-labelledby="h2-cap1">
+    <div class="wrap">
+      <h2 id="h2-cap1" class="big" data-in>Un ciclo dura 2,4 segundos.</h2>
+      <p class="lead" data-in style="--i:1">Bájelo despacio: el brazo hace cada movimiento cuando usted llega a él.</p>
+    </div>
+  </section>
+
+  <!-- ============ CICLO (firma) ============ -->
+  <section class="ciclo" id="ciclo" aria-labelledby="h2-ciclo">
+    <div class="ciclo__sticky wrap">
+      <div class="ciclo__head">
+        <h2 id="h2-ciclo" class="h2 big">Coger, llevar, dejar.</h2>
+      </div>
+      <div class="ciclo__stage" id="ciclo-stage" aria-hidden="true"></div>
+      <ul class="ciclo__figs">
+        <li><figure><img src="media/ciclo-1.webp" width="1500" height="1100" loading="lazy" alt="El brazo, con la pinza abierta, se coloca encima de la pieza apoyada en el útil de la derecha."><figcaption>Aproximación</figcaption></figure></li>
+        <li><figure><img src="media/ciclo-2.webp" width="1500" height="1100" loading="lazy" alt="Plano cercano: los dedos de la pinza cerrados sobre un casquillo de acero."><figcaption>Agarre</figcaption></figure></li>
+        <li><figure><img src="media/ciclo-3.webp" width="1500" height="1100" loading="lazy" alt="El brazo gira con la pieza cogida y la muñeca girada 90 grados."><figcaption>Transporte</figcaption></figure></li>
+        <li><figure><img src="media/ciclo-4.webp" width="1500" height="1100" loading="lazy" alt="El brazo deja la pieza en el útil de la izquierda y abre la pinza."><figcaption>Colocación</figcaption></figure></li>
+      </ul>
+      <div class="ciclo__side">
+        <ol class="pasos" id="pasos">
+          <li><h3>Aproximación</h3><p>El brazo se coloca 120 mm por encima de la pieza, con la pinza ya abierta.</p></li>
+          <li><h3>Agarre</h3><p>Baja en vertical y cierra. El sensor confirma que hay pieza y mide su ancho: 22 mm.</p></li>
+          <li><h3>Transporte</h3><p>Gira 140° con la pieza cogida. El husillo no puede moverse hacia atrás: si se corta la corriente, la pieza no cae.</p></li>
+          <li><h3>Colocación</h3><p>La deja en el segundo útil. La posición se repite con ±0,02 mm, ciclo tras ciclo.</p></li>
+          <li><h3>Vuelta</h3><p>Vuelve a la posición de espera. El ciclo completo dura 2,4 s.</p></li>
+        </ol>
+        <table class="datos lectura" aria-hidden="true">
+          <tr><th>Base</th><td id="r-j1">0°</td><th>Hombro</th><td id="r-j2">0°</td></tr>
+          <tr><th>Codo</th><td id="r-j3">0°</td><th>Muñeca</th><td id="r-j4">0°</td></tr>
+          <tr><th>Apertura</th><td id="r-gr">48 mm</td><th>Fuerza</th><td id="r-f">sin pieza</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SIMULADOR ============ -->
+  <section class="sim" id="sim" aria-labelledby="h2-sim">
+    <div class="wrap sim__grid">
+      <div class="sim__izq">
+        <h2 id="h2-sim" class="h2 big">¿Le sirve para su pieza?</h2>
+        <div class="atajos" role="group" aria-label="Probar con una pieza de nuestros clientes">
+          <button type="button" class="atajo" data-p="soporte" data-kg="0.6" data-c="12" aria-pressed="true">Soporte <small>0,6 kg</small></button>
+          <button type="button" class="atajo" data-p="tarro" data-kg="0.38" data-c="30" aria-pressed="false">Tarro <small>0,38 kg</small></button>
+          <button type="button" class="atajo" data-p="vial" data-kg="0.02" data-c="40" aria-pressed="false">Vial <small>0,02 kg</small></button>
+          <button type="button" class="atajo" data-p="caja" data-kg="2.4" data-c="18" aria-pressed="false">Caja <small>2,4 kg</small></button>
+        </div>
+        <form class="sim__form" id="sim-form" onsubmit="return false">
+          <div class="campo">
+            <label for="peso">Peso de la pieza <output id="o-peso" for="peso">0,60 <small>kg</small></output></label>
+            <input type="range" id="peso" min="0.02" max="20" step="0.01" value="0.6" aria-describedby="sim-ver">
+          </div>
+          <div class="campo">
+            <label for="cad">Piezas por minuto <output id="o-cad" for="cad">12</output></label>
+            <input type="range" id="cad" min="4" max="45" step="1" value="12" aria-describedby="sim-ver">
+          </div>
+        </form>
+        <div class="sim__res" aria-live="polite">
+          <p class="sim__modelo" id="sim-mod">AZ-E 40 S</p>
+          <p class="sim__veredicto" id="sim-ver">Le sirve, y basta una sola célula.</p>
+          <p id="sim-txt">Hacen falta 24 N de agarre y hay 3,0 s por pieza; la AZ-E 40 S cierra su ciclo en 1,6 s.</p>
+        </div>
+      </div>
+      <div class="sim__der">
+        <div class="sim__stage" id="sim-stage" aria-hidden="true">
+          <img class="sim__fallback" src="media/ciclo-3.webp" width="1500" height="1100" loading="lazy" alt="">
+        </div>
+        <dl class="lect" id="sim-lect">
+          <div id="l-f"><dt>Agarre necesario</dt><dd><b>24 N</b><span>de 140 N</span></dd><div class="medidor"><i></i></div></div>
+          <div id="l-t"><dt>Tiempo por pieza</dt><dd><b>3,0 s</b><span>el ciclo usa 1,6 s</span></dd><div class="medidor"><i></i></div></div>
+          <div id="l-c"><dt>Carga en el brazo</dt><dd><b>1,1 kg</b><span>de 10 kg</span></dd><div class="medidor"><i></i></div></div>
+          <div id="l-n"><dt>Células</dt><dd><b>1</b><span>una basta</span></dd><div class="medidor"><i></i></div></div>
+        </dl>
+        <p class="note sim__nota">Cálculo orientativo de una empresa ficticia: agarre por fricción con factor de seguridad 2 y brazo de 10 kg de carga.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTORES ============ -->
+  <div class="hojas">
+  <section class="sectores" id="sectores" aria-labelledby="h2-sect">
+    <div class="wrap">
+      <h2 id="h2-sect" class="h2 big" data-in>Lo que cogen nuestros clientes.</h2>
+      <p class="lead sectores__lead" data-in style="--i:1">Cuatro piezas de cuatro sectores. Abra cada una para ver qué pinza lleva y por qué.</p>
+      <div class="secs" data-in style="--i:2">
+        <article class="sec is-on" data-s="auto">
+          <button type="button" class="sec__btn" aria-expanded="true" aria-controls="s-auto"><span class="sec__pie"><span class="sec__nom">Automoción</span><span class="sec__pieza">Soporte de acero · 0,6 kg</span></span><span class="sec__mas" aria-hidden="true">+</span></button>
+          <img class="sec__img" src="media/sector-auto.webp" width="1200" height="900" loading="lazy" alt="La pinza sujeta un soporte de acero estampado en forma de L.">
+          <div class="sec__det" id="s-auto">
+              <h3>Piezas estampadas, aún calientes del troquel</h3>
+              <p>Soportes de acero de 0,6 kg a 12 piezas por minuto, junto a la prensa. Los dedos llevan un inserto de carburo para que el aceite no haga resbalar la pieza.</p>
+              <p class="rec"><b>AZ-E 80 M</b> con dedos planos y inserto de carburo</p>
+              <table class="datos"><tr><th>Pieza</th><td>acero · 0,6 kg</td></tr><tr><th>Cadencia</th><td>12/min</td></tr><tr><th>Fuerza</th><td>220 N</td></tr></table>
+            <a class="btn btn--sec btn--sm" href="#sim" data-probar="soporte">Probar esta pieza en el simulador</a>
+          </div>
+        </article>
+        <article class="sec" data-s="alim">
+          <button type="button" class="sec__btn" aria-expanded="false" aria-controls="s-alim"><span class="sec__pie"><span class="sec__nom">Alimentación</span><span class="sec__pieza">Tarro de vidrio · 0,38 kg</span></span><span class="sec__mas" aria-hidden="true">+</span></button>
+          <img class="sec__img" src="media/sector-alim.webp" width="1200" height="900" loading="lazy" alt="La pinza sujeta un tarro de vidrio con tapa metálica.">
+          <div class="sec__det" id="s-alim" hidden>
+              <h3>Tarros de vidrio, sin marcar la etiqueta</h3>
+              <p>Paletizado de tarros de 380 g. La fuerza se limita a 35 N para no rayar el vidrio, y la pinza se lava con agua a presión al final del turno.</p>
+              <p class="rec"><b>AZ-E 40 S</b> con dedos de poliamida apta para alimentos, IP 67</p>
+              <table class="datos"><tr><th>Pieza</th><td>vidrio · 0,38 kg</td></tr><tr><th>Cadencia</th><td>30/min</td></tr><tr><th>Fuerza</th><td>35 N</td></tr></table>
+            <a class="btn btn--sec btn--sm" href="#sim" data-probar="tarro">Probar esta pieza en el simulador</a>
+          </div>
+        </article>
+        <article class="sec" data-s="farma">
+          <button type="button" class="sec__btn" aria-expanded="false" aria-controls="s-farma"><span class="sec__pie"><span class="sec__nom">Farmacia</span><span class="sec__pieza">Vial de 10 ml · 0,02 kg</span></span><span class="sec__mas" aria-hidden="true">+</span></button>
+          <img class="sec__img" src="media/sector-farma.webp" width="1200" height="900" loading="lazy" alt="La pinza sujeta un vial de vidrio ámbar con cápsula de aluminio.">
+          <div class="sec__det" id="s-farma" hidden>
+              <h3>Viales de 10 ml, en sala blanca</h3>
+              <p>Paso de viales de la bandeja a la línea de llenado. Los dedos en V centran el vial solos y el cuerpo no tiene rincones donde se acumulen partículas.</p>
+              <p class="rec"><b>AZ-E 40 S</b> con dedos en V de acero inoxidable, versión sala blanca</p>
+              <table class="datos"><tr><th>Pieza</th><td>vidrio · 0,02 kg</td></tr><tr><th>Cadencia</th><td>40/min</td></tr><tr><th>Fuerza</th><td>15 N</td></tr></table>
+            <a class="btn btn--sec btn--sm" href="#sim" data-probar="vial">Probar esta pieza en el simulador</a>
+          </div>
+        </article>
+        <article class="sec" data-s="log">
+          <button type="button" class="sec__btn" aria-expanded="false" aria-controls="s-log"><span class="sec__pie"><span class="sec__nom">Logística</span><span class="sec__pieza">Caja · hasta 2,4 kg</span></span><span class="sec__mas" aria-hidden="true">+</span></button>
+          <img class="sec__img" src="media/sector-log.webp" width="1200" height="900" loading="lazy" alt="La pinza sujeta una caja pequeña de cartón cerrada con cinta.">
+          <div class="sec__det" id="s-log" hidden>
+              <h3>Cajas pequeñas, una distinta cada vez</h3>
+              <p>Preparación de pedidos con cajas de 30 a 55 mm de ancho. La pinza mide la caja al cerrar y avisa al robot si no es la del pedido.</p>
+              <p class="rec"><b>AZ-E 125 L</b> con dedos planos de goma</p>
+              <table class="datos"><tr><th>Pieza</th><td>cartón · hasta 2,4 kg</td></tr><tr><th>Cadencia</th><td>18/min</td></tr><tr><th>Fuerza</th><td>120 N</td></tr></table>
+            <a class="btn btn--sec btn--sm" href="#sim" data-probar="caja">Probar esta pieza en el simulador</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ELGOIBAR (capítulo con foto) ============ -->
+  <section class="lugar" id="elgoibar" aria-labelledby="h2-lugar">
+    <img src="media/elgoibar-museo-taller.webp" width="1920" height="1440" loading="lazy" alt="Taller antiguo del Museo de la Máquina-Herramienta de Elgoibar: taladros y tornos movidos por correas desde un eje en el techo de madera.">
+    <div class="wrap"><div class="lugar__panel">
+      <h2 id="h2-lugar" class="big" data-in>Elgoibar, tierra de máquinas.</h2>
+      <p class="lead" data-in style="--i:1">En el valle del Deba se fabrican máquinas desde hace generaciones. Atzamar diseña, mecaniza y prueba aquí cada pinza.</p>
+      <p class="credito">Foto: taller del Museo de la Máquina-Herramienta de Elgoibar, por Txo, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>, vía <a href="https://commons.wikimedia.org/w/index.php?curid=41919456">Wikimedia Commons</a>. No es el taller de Atzamar.</p>
+    </div></div>
+  </section>
+  </div>
+
+  <!-- ============ EXPLOSIONADO ============ -->
+  <section class="desp" id="despiece" aria-labelledby="h2-desp">
+    <div class="desp__sticky wrap">
+      <div class="desp__head">
+        <h2 id="h2-desp" class="h2 big">Nueve piezas, siete hechas aquí.</h2>
+      </div>
+      <div class="desp__stage" id="desp-stage" aria-hidden="true"></div>
+      <ul class="desp__figs">
+        <li><figure><img src="media/poster.webp" width="1200" height="1500" loading="lazy" alt="La pinza AZ-E 80 M montada."><figcaption>Montada</figcaption></figure></li>
+        <li><figure><img src="media/despiece-2.webp" width="1200" height="1500" loading="lazy" alt="La tapa frontal y el motor fuera de la carcasa."><figcaption>Tapa y motor fuera</figcaption></figure></li>
+        <li><figure><img src="media/despiece-3.webp" width="1200" height="1500" loading="lazy" alt="Despiece completo: mordazas, guías y husillo sobre la carcasa; tapa y motor delante; sensor a la derecha."><figcaption>Despiece completo</figcaption></figure></li>
+      </ul>
+      <ul class="piezas" id="piezas">
+        <li data-p="carcasa"><h3>Carcasa</h3><p>Aluminio mecanizado de un solo bloque y anodizado. Lleva la brida de 63 mm que la une al robot.</p></li>
+        <li data-p="tapa"><h3>Tapa</h3><p>Cuatro tornillos y se llega al motor y al husillo, sin soltar la pinza del robot.</p></li>
+        <li data-p="motor"><h3>Motor</h3><p>Sin escobillas, a 24 V y con encoder absoluto: al arrancar, sabe dónde están las mordazas.</p></li>
+        <li data-p="mordazas"><h3>Mordazas</h3><p>17 mm de carrera cada una. Los dedos se cambian en 45 s con dos tornillos por lado.</p></li>
+        <li data-p="guias"><h3>Guías</h3><p>Dos guías de acero rectificado reparten la carga. De ellas sale la repetibilidad de ±0,02 mm.</p></li>
+        <li data-p="husillo"><h3>Husillo</h3><p>Rosca a derechas en una mitad y a izquierdas en la otra: un solo giro centra las dos mordazas.</p></li>
+        <li data-p="sensor"><h3>Sensor</h3><p>Confirma que hay pieza y mide su ancho. Si no es la esperada, avisa al robot antes de moverla.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ BANCO DE PRUEBAS ============ -->
+  <section class="banco" aria-labelledby="h2-banco">
+    <div class="wrap banco__grid">
+      <div>
+        <h2 id="h2-banco" class="h2 big" data-in>El informe va dentro de la caja.</h2>
+        <p class="lead" data-in style="--i:1">Antes de salir, cada pinza hace 50.000 ciclos en el banco de pruebas. Lo que mide el banco se imprime y viaja con ella.</p>
+        <figure class="banco__foto" data-in style="--i:2">
+          <img src="media/elgoibar-museo-maquina.webp" width="1100" height="1466" loading="lazy" alt="Máquina antigua de color gris expuesta en el Museo de la Máquina-Herramienta de Elgoibar.">
+          <figcaption>Máquina expuesta en el Museo de la Máquina-Herramienta de Elgoibar. Foto: Txo, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>, vía <a href="https://commons.wikimedia.org/w/index.php?curid=41919450">Wikimedia Commons</a>.</figcaption>
+        </figure>
+      </div>
+      <article class="informe" data-in style="--i:1" aria-labelledby="h3-informe">
+        <h3 id="h3-informe">Informe de prueba en banco</h3>
+        <p>AZ-E 80 M · número de serie 26-11-0417 · Elgoibar, 11 nov 2026 (ejemplo)</p>
+        <table class="datos">
+          <tr><th>Ciclos completados</th><td>50.000</td></tr>
+          <tr><th>Fuerza medida (consigna 420 N)</th><td>418 N</td></tr>
+          <tr><th>Repetibilidad (exigida ±0,02 mm)</th><td>±0,014 mm</td></tr>
+          <tr><th>Tiempo de cierre</th><td>0,21 s</td></tr>
+          <tr><th>Temperatura del motor al final</th><td>38 °C</td></tr>
+          <tr><th>Holgura del husillo</th><td>0,006 mm</td></tr>
+        </table>
+        <p class="informe__ok"><span>Resultado</span><b>Apta para servicio</b></p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ CASO ============ -->
+  <section class="caso" id="caso" aria-labelledby="h2-caso">
+    <div class="wrap">
+      <h2 id="h2-caso" class="big" data-in>De 25 minutos a 40 segundos.</h2>
+      <p class="caso__sub" data-in style="--i:1">Lo que tarda un cambio de referencia en una célula de automoción.</p>
+      <p class="caso__relato" data-in style="--i:2">Un proveedor de automoción cambiaba de referencia seis veces por turno, y con pinzas neumáticas cada cambio era parar la célula, cambiar los dedos y volver a ajustar. Ahora una AZ-E 80 M guarda una receta por referencia: el PLC cambia la apertura y la fuerza en el mismo ciclo, sin tocar la pinza.</p>
+      <ul class="barras" aria-label="Antes y después">
+        <li class="barra" style="--antes:100%;--despues:3%">
+          <p class="barra__k">Cambio de referencia</p>
+          <div class="barra__fila"><span class="barra__eti">Antes</span><span class="barra__track"><i class="barra__a"></i></span><b class="barra__v">25 min</b></div>
+          <div class="barra__fila"><span class="barra__eti">Ahora</span><span class="barra__track"><i class="barra__d"></i></span><b class="barra__v barra__v--d">40 s</b></div>
+        </li>
+        <li class="barra" style="--antes:100%;--despues:77%">
+          <p class="barra__k">Tiempo de ciclo</p>
+          <div class="barra__fila"><span class="barra__eti">Antes</span><span class="barra__track"><i class="barra__a"></i></span><b class="barra__v">3,1 s</b></div>
+          <div class="barra__fila"><span class="barra__eti">Ahora</span><span class="barra__track"><i class="barra__d"></i></span><b class="barra__v barra__v--n">2,4 s</b></div>
+        </li>
+        <li class="barra" style="--antes:100%;--despues:17%">
+          <p class="barra__k">Piezas rechazadas</p>
+          <div class="barra__fila"><span class="barra__eti">Antes</span><span class="barra__track"><i class="barra__a"></i></span><b class="barra__v">1,8 %</b></div>
+          <div class="barra__fila"><span class="barra__eti">Ahora</span><span class="barra__track"><i class="barra__d"></i></span><b class="barra__v barra__v--n">0,3 %</b></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ RED: GLOBO ============ -->
+  <div class="hojas">
+  <section class="red" id="red" aria-labelledby="h2-red">
+    <div class="wrap">
+      <figure class="red__valle">
+        <img src="media/elgoibar-valle.webp" width="1920" height="340" loading="lazy" alt="Vista panorámica de Elgoibar en el valle del Deba, con la autovía y los montes alrededor.">
+        <figcaption>Elgoibar, en el valle del Deba. Foto: Pedro, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>, vía <a href="https://commons.wikimedia.org/w/index.php?curid=8688186">Wikimedia Commons</a>.</figcaption>
+      </figure>
+      <div class="red__grid">
+        <div class="red__head">
+          <h2 id="h2-red" class="h2 big" data-in>De Elgoibar a diez países.</h2>
+          <p class="lead" data-in style="--i:1">Oficina técnica en Elgoibar y nueve distribuidores con stock de dedos y repuestos. Elija un país para ver quién le atiende.</p>
+        </div>
+        <div class="red__stage" id="red-stage" aria-hidden="true"></div>
+        <div class="red__panel">
+          <table class="datos red__tabla">
+            <caption class="sr">Oficina central y distribuidores (personas inventadas)</caption>
+            <thead><tr><th scope="col">País</th><th scope="col">Ciudad</th><th scope="col" style="text-align:right">Entrega</th></tr></thead>
+            <tbody id="red-filas"></tbody>
+          </table>
+          <div class="ficha" id="ficha" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CIERRE ============ -->
+  <section class="cierre" id="contacto" aria-labelledby="h2-cierre">
+    <div class="wrap">
+      <h2 id="h2-cierre" class="h2 big">Díganos qué pieza hay que coger.</h2>
+      <p class="lead">Con cinco datos preparamos una propuesta técnica: el modelo, los dedos y la fuerza de agarre para su línea. El formulario es una frase; rellene los huecos.</p>
+      <p class="cierre__frase">Trabajamos en <span class="hueco">automoción<small>sector</small></span> en <span class="nw"><span class="hueco">Alemania<small>país</small></span>.</span> Hay que coger un <span class="hueco">soporte de acero estampado<small>pieza</small></span> de <span class="nw"><span class="hueco">0,6 kg<small>peso</small></span>,</span> <span class="nw"><span class="hueco">12 por minuto<small>cadencia</small></span>.</span></p>
+      <div class="cierre__pie">
+        <a class="btn btn--pri" role="link" aria-disabled="true">Pedir propuesta técnica</a>
+        <p class="note">Ejemplo de lo que se rellena. El formulario llega con la web completa; aquí no se envía nada.</p>
+      </div>
+    </div>
+  </section>
+  </div>
+</main>
+
+<footer class="pie">
+  <div class="wrap">
+    <dl class="cajetin">
+      <div class="cajetin__marca"><dt>Fabricante</dt><dd>ATZAMAR</dd><p>Pinzas eléctricas para robots. Elgoibar, Gipuzkoa.</p></div>
+      <div><dt>Situación</dt><dd class="num">43,21° N · 2,41° O</dd></div>
+      <div><dt>Hoja</dt><dd>Portada, demo</dd></div>
+      <div><dt>Diseño y desarrollo</dt><dd>Arnas Studio</dd></div>
+      <div class="cajetin__aviso"><dt>Aviso</dt><dd>Atzamar es una empresa ficticia. Gama, cifras, personas y datos son inventados. El brazo es un modelo genérico.</dd></div>
+    </dl>
+    <p class="creditos">Fotografías: <a href="https://commons.wikimedia.org/w/index.php?curid=41919456">«Elgoibar museo de la maquina herramienta 10»</a> y <a href="https://commons.wikimedia.org/w/index.php?curid=41919450">«… 6»</a>, de Txo (CC BY-SA 4.0); <a href="https://commons.wikimedia.org/w/index.php?curid=8688186">«Panoramica Elgoibar»</a>, de Pedro (CC BY-SA 3.0); vía Wikimedia Commons. Contorno de los continentes: Natural Earth (dominio público). Modelos 3D y renders: Arnas Studio, hechos en Blender.</p>
+  </div>
+</footer>
+
+<div class="tcp" id="tcp" aria-hidden="true"><span id="tcp-t">TCP</span></div>
+<div class="etiquetas" id="etiquetas" aria-hidden="true"></div>
+<div class="ciudades" id="ciudades" aria-hidden="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
+<script type="module">
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const idle = window.requestIdleCallback || ((f) => setTimeout(f, 200));
+const NF = {}; const nf = (d) => (NF[d] ||= new Intl.NumberFormat('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d }));
+idle(() => { nf(0); nf(1); nf(2); });
+const fmt = (v, d = 0) => nf(d).format(v);
+
+/* ---------- entradas y cifras al entrar en pantalla ---------- */
+{
+  const els = document.querySelectorAll('[data-in], .barra');
+  if (reduce || !('IntersectionObserver' in window)) els.forEach((e) => e.classList.add('is-in'));
+  else {
+    // los titulares empiezan recortados (área visible 0): se vigila su contenedor, no el titular
+    const vigia = new Map();
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { (vigia.get(e.target) || [e.target]).forEach((x) => x.classList.add('is-in')); io.unobserve(e.target); } }), { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+    els.forEach((e) => {
+      if (!e.matches('.big')) { if (vigia.has(e)) vigia.get(e).push(e); else io.observe(e); return; }
+      const box = e.parentElement; if (!vigia.has(box)) { vigia.set(box, box.matches('[data-in]') ? [box] : []); io.observe(box); } vigia.get(box).push(e);
+    });
+  }
+  if (!reduce && 'IntersectionObserver' in window) {
+    const io2 = new IntersectionObserver((es) => es.forEach((e) => {
+      if (!e.isIntersecting) return; io2.unobserve(e.target);
+      const el = e.target, to = +el.dataset.to, d = +(el.dataset.dec || 0), pre = el.dataset.pre || '', t0 = performance.now();
+      (function tick(now) { const k = Math.min(1, (now - t0) / 1200); el.textContent = pre + fmt(to * (1 - Math.pow(1 - k, 4)), d); if (k < 1) requestAnimationFrame(tick); })(t0);
+    }), { threshold: 0.6 });
+    document.querySelectorAll('[data-to]').forEach((el) => io2.observe(el));
+  }
+}
+
+/* ---------- sectores: paneles que se abren (uno a la vez) ---------- */
+{
+  const secs = [...document.querySelectorAll('.sec')];
+  const cuenta = (td) => {   // la cifra cuenta hasta su valor nuevo
+    const m = td.textContent.match(/^(.*?)(\d+(?:,\d+)?)(.*)$/); if (!m || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const dec = (m[2].split(',')[1] || '').length, fin = parseFloat(m[2].replace(',', '.')), t0 = performance.now();
+    const paso = (t) => { const k = Math.min(1, (t - t0) / 700), e = 1 - Math.pow(1 - k, 3);
+      td.textContent = m[1] + (fin * e).toFixed(dec).replace('.', ',') + m[3]; if (k < 1) requestAnimationFrame(paso); };
+    requestAnimationFrame(paso);
+  };
+  const abrir = (sec, focus) => {
+    secs.forEach((x) => { const on = x === sec, b = x.querySelector('.sec__btn');
+      x.classList.toggle('is-on', on); b.setAttribute('aria-expanded', String(on)); x.querySelector('.sec__det').hidden = !on; });
+    sec.querySelectorAll('.datos td').forEach(cuenta);
+    if (focus) sec.querySelector('.sec__btn').focus();
+  };
+  secs.forEach((x, i) => {
+    const b = x.querySelector('.sec__btn');
+    b.addEventListener('click', () => { if (!x.classList.contains('is-on')) abrir(x); });
+    b.addEventListener('keydown', (e) => {
+      const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      if (k) { e.preventDefault(); abrir(secs[(i + k + secs.length) % secs.length], true); }
+    });
+  });
+  document.querySelectorAll('[data-probar]').forEach((a) => a.addEventListener('click', () => sim.usar && sim.usar(a.dataset.probar)));
+}
+
+/* ---------- simulador: cálculo (funciona sin 3D) ---------- */
+const GAMA = [
+  { m: 'AZ-E 40 S', fmin: 15, fmax: 140, ciclo: 1.6, peso: 0.48 },
+  { m: 'AZ-E 80 M', fmin: 40, fmax: 420, ciclo: 2.0, peso: 1.15 },
+  { m: 'AZ-E 125 L', fmin: 90, fmax: 980, ciclo: 2.6, peso: 2.90 },
+];
+const CARGA_BRAZO = 10;   // kg, brazo de ejemplo
+const sim = { periodo: 3, forma: 'soporte' };
+{
+  const peso = document.getElementById('peso'), cad = document.getElementById('cad');
+  const oP = document.getElementById('o-peso'), oC = document.getElementById('o-cad');
+  const ver = document.getElementById('sim-ver'), modEl = document.getElementById('sim-mod'), txt = document.getElementById('sim-txt');
+  const calc = () => {
+    const kg = +peso.value, c = +cad.value, disp = 60 / c;
+    oP.innerHTML = `${fmt(kg, kg < 1 ? 2 : 1)} <small>kg</small>`; oC.textContent = c;
+    const F = kg * 9.81 * 2 / (2 * 0.25);   // fricción µ 0,25 en dos dedos, factor de seguridad 2
+    const mod = GAMA.find((g) => g.fmax >= F) || null;
+    let veredicto, texto, no = false;
+    if (!mod) {
+      no = true; veredicto = 'Necesita una pinza a medida.';
+      texto = `Para ${fmt(kg, 1)} kg hacen falta ${fmt(F)} N de agarre, más que nuestra AZ-E 125 L. Pídanos una propuesta.`;
+    } else {
+      const carga = kg + mod.peso, celulas = Math.ceil(mod.ciclo / disp), F2 = Math.max(F, mod.fmin);
+      if (carga > CARGA_BRAZO) { no = true; veredicto = 'La pinza sirve, el brazo no.'; texto = `Pieza y ${mod.m} suman ${fmt(carga, 1)} kg: un brazo de ${CARGA_BRAZO} kg no basta.`; }
+      else if (celulas > 1) { no = true; veredicto = `Sirve la ${mod.m}, en ${celulas} células.`; texto = `A ${c} piezas por minuto hay ${fmt(disp, 1)} s por pieza, y el ciclo más corto con esta pinza es de ${fmt(mod.ciclo, 1)} s.`; }
+      else { veredicto = 'Le sirve, y basta una sola célula.'; texto = `Hacen falta ${fmt(F2)} N de agarre y hay ${fmt(disp, 1)} s por pieza; la ${mod.m} cierra su ciclo en ${fmt(mod.ciclo, 1)} s.`; }
+    }
+    // la cifra grande: el modelo que sirve, o lo que falta para que sirva
+    const big = !mod ? 'A medida' : (mod && kg + mod.peso > CARGA_BRAZO) ? `${fmt(kg + mod.peso, 1)} kg` : mod.m;
+    modEl.textContent = big;
+    ver.textContent = veredicto; txt.textContent = texto;
+    sim.periodo = Math.min(8, Math.max(mod ? mod.ciclo : 2, disp));
+    // barra de lectura: cada cifra con lo que usa de su límite
+    const L = (id, val, sub, u) => { const el = document.getElementById(id); el.querySelector('b').textContent = val; el.querySelector('span').textContent = sub;
+      el.style.setProperty('--u', Math.max(0, u).toFixed(3)); el.classList.toggle('is-over', u > 1); };
+    const m = mod || GAMA[GAMA.length - 1], Fm = Math.max(F, m.fmin), cargaM = kg + m.peso, cel = Math.ceil(m.ciclo / disp);
+    L('l-f', `${fmt(Fm)} N`, `de ${fmt(m.fmax)} N`, Fm / m.fmax);
+    L('l-t', `${fmt(disp, 1)} s`, `el ciclo usa ${fmt(m.ciclo, 1)} s`, m.ciclo / disp);
+    L('l-c', `${fmt(cargaM, 1)} kg`, `de ${CARGA_BRAZO} kg`, cargaM / CARGA_BRAZO);
+    L('l-n', String(cel), cel > 1 ? 'hace falta más de una' : 'una basta', cel > 1 ? 1.01 : 0.25);
+  };
+  const atajos = [...document.querySelectorAll('.atajo')];
+  const marca = (b) => atajos.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  const usar = (id) => { const b = atajos.find((x) => x.dataset.p === id); if (!b) return;
+    peso.value = b.dataset.kg; cad.value = b.dataset.c; sim.forma = id; marca(b); calc(); };
+  sim.usar = usar;
+  atajos.forEach((b) => b.addEventListener('click', () => usar(b.dataset.p)));
+  peso.addEventListener('input', () => { marca(null); calc(); }); cad.addEventListener('input', () => { marca(null); calc(); }); calc(); marca(atajos[0]);
+}
+
+/* ---------- red de distribuidores (tabla y ficha, también sin 3D) ---------- */
+const RED = [
+  { id: 'es', pais: 'España', ciudad: 'Elgoibar', lat: 43.21, lon: -2.41, hq: true, quien: 'Oficina técnica Atzamar', idioma: 'Castellano, euskera, inglés', entrega: '24 h', mail: 'tecnica@atzamar.example' },
+  { id: 'pt', pais: 'Portugal', ciudad: 'Oporto', lat: 41.15, lon: -8.61, quien: 'Inês Carvalho', idioma: 'Portugués, inglés', entrega: '48 h', mail: 'pt@atzamar.example' },
+  { id: 'fr', pais: 'Francia', ciudad: 'Lyon', lat: 45.76, lon: 4.84, quien: 'Camille Laurent', idioma: 'Francés, inglés', entrega: '48 h', mail: 'fr@atzamar.example' },
+  { id: 'uk', pais: 'Reino Unido', ciudad: 'Birmingham', lat: 52.49, lon: -1.89, quien: 'Oliver Hughes', idioma: 'Inglés', entrega: '72 h', mail: 'uk@atzamar.example' },
+  { id: 'nl', pais: 'Países Bajos', ciudad: 'Eindhoven', lat: 51.44, lon: 5.47, quien: 'Sanne de Vries', idioma: 'Neerlandés, inglés, alemán', entrega: '48 h', mail: 'nl@atzamar.example' },
+  { id: 'de', pais: 'Alemania', ciudad: 'Stuttgart', lat: 48.78, lon: 9.18, quien: 'Jonas Weber', idioma: 'Alemán, inglés', entrega: '48 h', mail: 'de@atzamar.example' },
+  { id: 'it', pais: 'Italia', ciudad: 'Milán', lat: 45.46, lon: 9.19, quien: 'Giulia Ferri', idioma: 'Italiano, inglés', entrega: '48 h', mail: 'it@atzamar.example' },
+  { id: 'cz', pais: 'Chequia', ciudad: 'Brno', lat: 49.19, lon: 16.61, quien: 'Petr Novák', idioma: 'Checo, alemán, inglés', entrega: '72 h', mail: 'cz@atzamar.example' },
+  { id: 'pl', pais: 'Polonia', ciudad: 'Poznań', lat: 52.41, lon: 16.93, quien: 'Anna Kowalczyk', idioma: 'Polaco, inglés', entrega: '72 h', mail: 'pl@atzamar.example' },
+  { id: 'se', pais: 'Suecia', ciudad: 'Gotemburgo', lat: 57.71, lon: 11.97, quien: 'Erik Lindqvist', idioma: 'Sueco, inglés', entrega: '72 h', mail: 'se@atzamar.example' },
+];
+const red = { activo: 'es', onPick: null };
+{
+  const filas = document.getElementById('red-filas'), ficha = document.getElementById('ficha');
+  RED.forEach((d) => {
+    const tr = document.createElement('tr'); tr.dataset.id = d.id;
+    tr.innerHTML = `<td><button type="button" aria-pressed="false">${d.pais}</button></td><td>${d.ciudad}</td><td>${d.entrega}</td>`;
+    filas.append(tr);
+  });
+  red.pick = (id) => {
+    const d = RED.find((r) => r.id === id); red.activo = id;
+    filas.querySelectorAll('tr').forEach((tr) => { const on = tr.dataset.id === id; tr.classList.toggle('is-on', on); tr.querySelector('button').setAttribute('aria-pressed', on); });
+    ficha.innerHTML = `<h3>${d.quien}</h3><p>${d.hq ? 'Oficina central y taller' : 'Distribuidor de Atzamar'} · ${d.ciudad}, ${d.pais}</p>
+      <dl><dt>Idioma</dt><dd>${d.idioma}</dd><dt>Entrega</dt><dd>${d.entrega} desde el pedido</dd><dt>Correo</dt><dd>${d.mail}</dd></dl>`;
+    if (red.onPick) red.onPick(d);
+  };
+  filas.addEventListener('pointerover', (e) => { const tr = e.target.closest('tr'); document.querySelectorAll('.ciudad').forEach((el) => el.classList.toggle('is-hover', !!tr && el.dataset.id === tr.dataset.id)); });
+  filas.addEventListener('pointerleave', () => document.querySelectorAll('.ciudad').forEach((el) => el.classList.remove('is-hover')));
+  filas.addEventListener('click', (e) => { const tr = e.target.closest('tr'); if (tr) red.pick(tr.dataset.id); });
+  red.pick('es');
+}
+
+/* ---------- 3D: escritorio, WebGL, sin ahorro de datos ---------- */
+const webgl = (() => { try { return !!document.createElement('canvas').getContext('webgl2'); } catch { return false; } })();
+if (matchMedia('(min-width: 900px)').matches && !reduce && webgl && !(navigator.connection && navigator.connection.saveData)) {
+  const start = () => idle(() => boot().catch((err) => { console.warn('3D no disponible:', err); document.documentElement.classList.remove('has-3d', 'is-3d'); }));
+  if (document.readyState === 'complete') start(); else addEventListener('load', start, { once: true });
+}
+
+/* Cinemática: mismas medidas que en Blender (assets/brazo-atzamar.blend) */
+const SH = 0.21, L1 = 0.40, L2 = 0.36, TOOL = 0.298, DEG = Math.PI / 180;
+function ik(r, z, yaw, roll = 0, tilt = 0, j5 = 0) {
+  const wx = r - TOOL * Math.sin(tilt), wz = z + TOOL * Math.cos(tilt);
+  const dx = wx, dz = wz - SH, d = Math.min(Math.hypot(dx, dz), L1 + L2 - 1e-4);
+  const phi = Math.atan2(dx, dz), a = Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d))));
+  const t2 = phi - a, ex = L1 * Math.sin(t2), ez = L1 * Math.cos(t2), b = Math.atan2(dx - ex, dz - ez);
+  return { j1: yaw, j2: t2, j3: b - t2, j4: (Math.PI - tilt) - b, j5, j6: roll };
+}
+
+async function boot() {
+  const [THREE, { GLTFLoader }, { RGBELoader }, { EffectComposer }, { RenderPass }, { GTAOPass }, { OutputPass }] = await Promise.all([
+    import('three'), import('three/addons/loaders/GLTFLoader.js'), import('three/addons/loaders/RGBELoader.js'),
+    import('three/addons/postprocessing/EffectComposer.js'), import('three/addons/postprocessing/RenderPass.js'),
+    import('three/addons/postprocessing/GTAOPass.js'), import('three/addons/postprocessing/OutputPass.js'),
+  ]);
+  const loader = new GLTFLoader();
+  const [gltf, gPinza, hdr, puntos] = await Promise.all([
+    loader.loadAsync('media/brazo.glb'), loader.loadAsync('media/pinza.glb'),
+    new RGBELoader().loadAsync('media/estudio.hdr'), fetch('media/globo-puntos.bin').then((r) => r.arrayBuffer()).then((b) => new Int16Array(b)),
+  ]);
+  const { gsap, ScrollTrigger, Lenis } = window;
+  gsap.registerPlugin(ScrollTrigger);
+
+  const canvas = document.getElementById('gl');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.debug.checkShaderErrors = false;   // en producción: evita esperas al driver
+  renderer.toneMapping = THREE.AgXToneMapping; renderer.toneMappingExposure = 1.1;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  hdr.mapping = THREE.EquirectangularReflectionMapping;
+  scene.environment = pmrem.fromEquirectangular(hdr).texture; hdr.dispose();
+  scene.environmentIntensity = 0.85;
+  const camera = new THREE.PerspectiveCamera(25, 1, 0.05, 30);
+  const YAW0 = -0.62, PITCH0 = 0.30;
+
+  /* --- materiales físicos con los valores de Blender afinados --- */
+  const LOOK = {
+    pintura_clara: { color: 0xe4e6e9, roughness: 0.4, clearcoat: 0.9, clearcoatRoughness: 0.14 },
+    junta_oscura: { color: 0x22252a, roughness: 0.48, metalness: 0.1, clearcoat: 0.35, clearcoatRoughness: 0.3 },
+    aluminio_anodizado: { color: 0x5e646d, roughness: 0.34, metalness: 1, envMapIntensity: 0.95, clearcoat: 0.12, clearcoatRoughness: 0.4 },
+    acero_mecanizado: { color: 0xc9cdd3, roughness: 0.18, metalness: 1, envMapIntensity: 1.3 },
+    acero_pavonado: { color: 0x2f333a, roughness: 0.28, metalness: 1, envMapIntensity: 1.2 },
+    motor_negro: { color: 0x3c4046, roughness: 0.38, metalness: 0.85, envMapIntensity: 1.1 },
+    plastico_tecnico: { color: 0x17181b, roughness: 0.55, clearcoat: 0.2, clearcoatRoughness: 0.5 },
+    goma_agarre: { color: 0x0b0b0c, roughness: 0.92 },
+    acento_marca: { color: 0xedff21, roughness: 0.32, clearcoat: 0.7, clearcoatRoughness: 0.12 },
+    mesa_celula: { color: 0x15171a, roughness: 0.86, metalness: 0, envMapIntensity: 0.3, specularIntensity: 0.4 },
+  };
+  // La pinza del despiece se ve sola sobre el grafito: aluminio anodizado claro (granallado), acero
+  // más mate y tapa gris carbón, para que la forma se lea con la luz directa y no solo con reflejos.
+  const LOOK_PINZA = { ...LOOK,
+    aluminio_anodizado: { color: 0x4a5869, roughness: 0.6, metalness: 0.25, envMapIntensity: 0.8, clearcoat: 0.5, clearcoatRoughness: 0.45 },   // anodizado gris azulado, granallado
+    acero_mecanizado: { color: 0xeef1f5, roughness: 0.1, metalness: 1, envMapIntensity: 1.8 },                                              // acero pulido, con reflejos
+    plastico_tecnico: { color: 0x1d1f23, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.3 },                                       // tapa en carbón
+    motor_negro: { color: 0x26292e, roughness: 0.36, metalness: 0.45, envMapIntensity: 1 },
+    goma_agarre: { color: 0x141518, roughness: 0.85 },
+  };
+  const made = new Map();
+  const upgrade = (root, shadows, look = LOOK) => root.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = shadows; o.receiveShadow = shadows;
+    const src = o.material, name = (src.name || '').replace(/\.\d+$/, '');
+    if (!made.has(src)) {
+      const m = new THREE.MeshPhysicalMaterial({ color: src.color, roughness: src.roughness, metalness: src.metalness });
+      if (look[name]) { const { color, ...rest } = look[name]; m.color.set(color); Object.assign(m, rest); }
+      m.name = name; made.set(src, m);
+    }
+    o.material = made.get(src);
+  });
+  // el brazo, de la misma familia que la pinza: pintura satinada y juntas en el anodizado gris azulado
+  const LOOK_BRAZO = { ...LOOK_PINZA,
+    pintura_clara: { color: 0xe8e9eb, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.08 },
+    junta_oscura: { color: 0x4a5869, roughness: 0.5, metalness: 0.3, envMapIntensity: 0.9, clearcoat: 0.5, clearcoatRoughness: 0.35 },
+  };
+  upgrade(gltf.scene, true, LOOK_BRAZO); upgrade(gPinza.scene, false, LOOK_PINZA);
+  // Pinza del despiece: borde frío y, con uPlano, paso del objeto sombreado al dibujo técnico.
+  const uPlano = { value: 0 };
+  const shaderPinza = (conPlano) => (sh) => {
+    sh.uniforms.uPlano = uPlano;
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uPlano;')
+      .replace('#include <opaque_fragment>',
+        'float rimF = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 4.0) * clamp(0.25 - normalize(normal).x, 0.0, 1.0);\n' +
+        ' outgoingLight += vec3(0.5, 0.7, 1.0) * rimF * 1.1 * (1.0 - uPlano);\n' +
+        (conPlano ? ' outgoingLight = mix(outgoingLight, vec3(2.4) + outgoingLight * 0.15, uPlano * 0.92);\n' : '') +
+        '#include <opaque_fragment>');
+  };
+  const conBorde = new Set(), aristas = [];
+  const tinta = new THREE.LineBasicMaterial({ color: 0x111214, transparent: true, opacity: 0, toneMapped: false });
+  gPinza.scene.traverse((o) => {
+    if (!o.isMesh || o.name === 'pieza' || (o.parent && o.parent.name === 'pieza')) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    mats.forEach((m) => { if (conBorde.has(m)) return; conBorde.add(m);
+      const plano = m.name !== 'acento_marca';   // en el plano todo es papel menos el sensor amarillo
+      m.onBeforeCompile = shaderPinza(plano); m.customProgramCacheKey = () => 'pinza-' + plano; m.needsUpdate = true; });
+    const l = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 28), tinta); l.visible = false; o.add(l); aristas.push(l);
+  });
+  const bordeBrazo = new Set();
+  gltf.scene.traverse((o) => { if (!o.isMesh || ['mesa', 'util_a', 'util_b'].includes(o.name)) return;
+    (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { if (bordeBrazo.has(m) || m.transparent) return; bordeBrazo.add(m);
+      m.onBeforeCompile = shaderPinza(false); m.customProgramCacheKey = () => 'brazo-borde'; m.needsUpdate = true; }); });
+
+  /* ================= escena 1: brazo ================= */
+  const armRoot = new THREE.Group(); scene.add(armRoot);
+  const pivot = new THREE.Group(), holder = new THREE.Group();
+  holder.add(gltf.scene); pivot.add(holder); armRoot.add(pivot);
+  const key = new THREE.DirectionalLight(0xfff6ee, 2.4); key.position.set(1.35, 1.65, 1.05); key.target.position.set(0.1, 0.25, 0);
+  key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0002; key.shadow.normalBias = 0.008;
+  Object.assign(key.shadow.camera, { left: -0.9, right: 0.9, top: 0.9, bottom: -0.9, near: 0.5, far: 4.5 });
+  const rim = new THREE.DirectionalLight(0xe8eeff, 1.3); rim.position.set(-0.75, 1.2, -1.8);
+  holder.add(key, key.target, rim);
+  const catcher = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.ShadowMaterial({ opacity: 0.28, transparent: true, depthWrite: false }));
+  catcher.rotation.x = -Math.PI / 2; catcher.position.y = 0.0005; catcher.receiveShadow = true; holder.add(catcher);
+  const VIEW = {
+    poster: { t: [0.0595, 0.323, -0.011], d: 1.8 },
+    wide: { t: [0.06, 0.40, 0.10], d: 2.75 },
+    sim: { t: [0.10, 0.30, 0.08], d: 2.15 },   // simulador: más cerca, el brazo manda sobre la mesa
+    closeA: { t: [0.40, 0.27, -0.11], d: 1.7 },
+    closeB: { t: [-0.21, 0.27, 0.35], d: 1.7 },
+  };
+  const N = (n) => gltf.scene.getObjectByName(n);
+  N('mesa').traverse((o) => { if (o.isMesh) o.castShadow = false; });
+  const J = ['j1', 'j2', 'j3', 'j4', 'j5', 'j6'].map(N), jawL = N('mordaza_izq'), jawR = N('mordaza_der'), tcp = N('tcp'), part = N('pieza');
+  const cell = ['mesa', 'util_a', 'util_b', 'pieza'].map(N);
+  const cellMats = [];
+  cell.forEach((o) => o.traverse((m) => { if (m.material) { m.material = m.material.clone(); m.material.transparent = true; cellMats.push(m.material); } }));
+  part.traverse((m) => { if (m.material) { m.material.color.set(0x9aa0a8); m.material.roughness = 0.2; m.material.metalness = 1; m.material.envMapIntensity = 1.3; } });
+  // piezas de los atajos del simulador (en ejes de la TCP: +Y es hacia abajo, la base apoya en y = +14 mm)
+  const FORMAS = {}, GRIP = { soporte: 18.9, tarro: 21.9, vial: 13.9, caja: 20.9 };   // semiapertura al cerrar, en mm
+  {
+    const M = (o) => new THREE.MeshPhysicalMaterial(o);
+    const vidrio = M({ color: 0xa9bcb8, roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.05, transparent: true, opacity: 0.6, envMapIntensity: 1.4 });
+    const tapaM = M({ color: 0xbfc4ca, roughness: 0.22, metalness: 1, envMapIntensity: 1.3 });
+    const ambar = M({ color: 0x8a4810, roughness: 0.08, clearcoat: 1, transparent: true, opacity: 0.88, envMapIntensity: 1.3 });
+    const carton = M({ color: 0xa8845a, roughness: 0.9 });
+    const cinta = M({ color: 0xd9cfb2, roughness: 0.5, clearcoat: 0.4 });
+    const pz = (geo, mat, y) => { const m = new THREE.Mesh(geo, mat); m.position.y = y; m.castShadow = true; m.receiveShadow = true; return m; };
+    const cyl = (r, h) => new THREE.CylinderGeometry(r, r, h, 40);
+    const g = (...ms) => { const o = new THREE.Group(); ms.forEach((m) => o.add(m)); o.visible = false; part.add(o); return o; };
+    FORMAS.tarro = g(pz(cyl(0.017, 0.046), vidrio, -0.009), pz(cyl(0.0176, 0.008), tapaM, -0.036));
+    FORMAS.vial = g(pz(cyl(0.009, 0.038), ambar, -0.005), pz(cyl(0.0096, 0.007), tapaM, -0.0275));
+    FORMAS.caja = g(pz(new THREE.BoxGeometry(0.032, 0.040, 0.044), carton, -0.006), pz(new THREE.BoxGeometry(0.0326, 0.0012, 0.011), cinta, -0.0262));
+  }
+  let formaVista = 'soporte';
+  const verForma = (f) => { if (f === formaVista) return; formaVista = f; part.material.visible = f === 'soporte'; Object.entries(FORMAS).forEach(([k, o]) => { o.visible = k === f; }); };
+  const setPose = (q, grip) => {
+    J[0].rotation.set(0, q.j1, 0); J[1].rotation.set(0, 0, -q.j2); J[2].rotation.set(0, 0, -q.j3);
+    J[3].rotation.set(0, 0, -q.j4); J[4].rotation.set(q.j5, 0, 0); J[5].rotation.set(0, q.j6, 0);
+    jawL.position.x = -grip / 1000; jawR.position.x = grip / 1000;
+    gltf.scene.updateMatrixWorld(true);
+  };
+  const rel = (o) => new THREE.Matrix4().copy(gltf.scene.matrixWorld).invert().multiply(o.matrixWorld);
+  const ST = { a: [0.50, 18 * DEG], b: [0.48, -122 * DEG] };
+  setPose(ik(ST.a[0], 0.094, ST.a[1]), 18.9); const matA = rel(tcp);
+  setPose(ik(ST.b[0], 0.094, ST.b[1]), 18.9); const matB = rel(tcp);
+  const HERO = { r: 0.36, z: 0.34, yaw: -12 * DEG, tilt: 38 * DEG };
+  const S = { r: HERO.r, z: HERO.z, yaw: HERO.yaw, tilt: HERO.tilt, roll: 0, grip: 24, carry: 0, at: 0,
+    tx: VIEW.wide.t[0], ty: VIEW.wide.t[1], tz: VIEW.wide.t[2], d: VIEW.wide.d };
+  const cam = (vw) => ({ tx: vw.t[0], ty: vw.t[1], tz: vw.t[2], d: vw.d });
+
+  // El ciclo en tramos que se solapan (0 → 1). Lo usan el scroll y el simulador.
+  const addCycle = (tl, withCam) => {
+    tl.to({}, { duration: 0.06 }, 0);
+    tl.to(S, { r: 0.50, yaw: ST.a[1], duration: 0.15 }, 0.06);
+    tl.to(S, { tilt: 0, duration: 0.12 }, 0.07);
+    tl.to(S, { z: 0.214, duration: 0.14, ease: 'power2.inOut' }, 0.07);
+    if (withCam) tl.to(S, { ...cam(VIEW.closeA), duration: 0.10 }, 0.19);
+    tl.to(S, { z: 0.094, duration: 0.08, ease: 'power3.out' }, 0.21);
+    tl.to(S, { grip: 18.9, duration: 0.05, ease: 'back.out(1.6)' }, 0.30);   // cierra y se asienta, como un servo
+    tl.set(S, { carry: 1 }, 0.355);
+    tl.to(S, { z: 0.214, duration: 0.06, ease: 'power2.inOut' }, 0.38);
+    if (withCam) tl.to(S, { ...cam(VIEW.wide), duration: 0.10 }, 0.39);
+    tl.to(S, { yaw: ST.b[1], r: ST.b[0], duration: 0.18 }, 0.42);
+    tl.to(S, { z: 0.36, duration: 0.09, ease: 'sine.out' }, 0.43);
+    tl.to(S, { z: 0.214, duration: 0.09, ease: 'sine.in' }, 0.52);
+    tl.to(S, { roll: 90 * DEG, duration: 0.09 }, 0.43);
+    tl.to(S, { roll: 0, duration: 0.09 }, 0.52);
+    if (withCam) tl.to(S, { ...cam(VIEW.closeB), duration: 0.10 }, 0.58);
+    tl.to(S, { z: 0.094, duration: 0.08, ease: 'power3.out' }, 0.61);
+    tl.to(S, { grip: 24, duration: 0.05, ease: 'power2.inOut' }, 0.70);
+    tl.set(S, { carry: 0, at: 1 }, 0.705);
+    tl.to(S, { z: 0.214, duration: 0.06, ease: 'power2.inOut' }, 0.78);
+    if (withCam) tl.to(S, { ...cam(VIEW.wide), duration: 0.10 }, 0.79);
+    tl.to(S, { r: HERO.r, z: HERO.z, yaw: HERO.yaw, tilt: HERO.tilt, duration: 0.16 }, 0.82);
+    tl.set(S, { at: 0 }, 0.995);          // llega la siguiente pieza al útil A
+    tl.to({}, { duration: 0.005 }, 0.995);
+  };
+
+  /* ================= escena 2: pinza explosionada ================= */
+  const pinzaRoot = new THREE.Group(); scene.add(pinzaRoot);
+  const pPivot = new THREE.Group(), pHolder = new THREE.Group();
+  pHolder.add(gPinza.scene); pHolder.position.set(0, -0.082, 0); pPivot.add(pHolder); pinzaRoot.add(pPivot);
+  const pKey = new THREE.DirectionalLight(0xfff4ea, 2.1); pKey.position.set(1.2, 1.6, 1.4); pinzaRoot.add(pKey);
+  // luz de borde fría por detrás y a la izquierda: recorta la silueta contra el fondo oscuro
+  const pRim = new THREE.DirectionalLight(0xc8dcff, 4.2); pRim.position.set(-1.3, 0.9, -1.4); pinzaRoot.add(pRim);
+  const pFill = new THREE.HemisphereLight(0xdfe7f2, 0x16181c, 1.1); pinzaRoot.add(pFill); // relleno parejo: la pinza gira y ninguna cara se apaga
+  const P = (n) => gPinza.scene.getObjectByName(n);
+  P('pieza').visible = false;
+  // desplazamientos del despiece (glTF: Y arriba, Z hacia la cámara), en el orden en que salen
+  const EXP = [
+    { id: 'tapa', parts: [['tapa', 0, 0, 0.182]] },
+    { id: 'motor', parts: [['motor', 0, 0, 0.111]] },
+    { id: 'mordazas', parts: [['mordaza_izq', -0.013, 0.124, 0], ['mordaza_der', 0.013, 0.124, 0]] },
+    { id: 'guias', parts: [['guia_izq', 0, 0.075, 0], ['guia_der', 0, 0.075, 0]] },
+    { id: 'husillo', parts: [['husillo', 0, 0.060, 0]] },
+    { id: 'sensor', parts: [['sensor', 0.062, 0, 0]] },
+  ];
+  const PN = ['carcasa', 'tapa', 'motor', 'husillo', 'guia_izq', 'guia_der', 'mordaza_izq', 'mordaza_der', 'sensor'];
+  const pBase = {}; PN.forEach((n) => { pBase[n] = P(n).position.clone(); });
+  const E = { e0: 0, e1: 0, e2: 0, e3: 0, e4: 0, e5: 0, spin: 0, d: 0.7, plano: 0 };
+
+  /* ================= escena 3: globo ================= */
+  const globeRoot = new THREE.Group(); scene.add(globeRoot);
+  const globe = new THREE.Group(); globeRoot.add(globe);
+  const ll = (lat, lon, r = 1) => { const p = lat * DEG, l = lon * DEG; return new THREE.Vector3(r * Math.cos(p) * Math.sin(l), r * Math.sin(p), r * Math.cos(p) * Math.cos(l)); };
+  {
+    // media/globo-puntos.bin: pares lat/lon × 100 en Int16 (Natural Earth 110m, dominio público)
+    const n = puntos.length / 2, pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const q = ll(puntos[2 * i] / 100, puntos[2 * i + 1] / 100); pos.set([q.x, q.y, q.z], i * 3); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    globe.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x7d838b, size: 0.0052, sizeAttenuation: true, toneMapped: false })));
+    globe.add(new THREE.Mesh(new THREE.SphereGeometry(0.992, 64, 48), new THREE.MeshBasicMaterial({ color: 0x0e0f11, toneMapped: false })));
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x24272c, toneMapped: false });
+    for (let lat = -60; lat <= 60; lat += 30) { const pts = []; for (let lon = -180; lon <= 180; lon += 4) pts.push(ll(lat, lon, 1.001)); globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat)); }
+    for (let lon = -180; lon < 180; lon += 30) { const pts = []; for (let lat = -90; lat <= 90; lat += 4) pts.push(ll(lat, lon, 1.001)); globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat)); }
+  }
+  const hqV = ll(RED[0].lat, RED[0].lon, 1.003);
+  const arcs = {}, dots = {};
+  const dotGeo = new THREE.SphereGeometry(0.0085, 16, 12);
+  RED.forEach((d) => {
+    const q = ll(d.lat, d.lon, 1.003);
+    const dot = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: d.hq ? 0xeceef0 : 0xa6abb2, toneMapped: false }));
+    dot.position.copy(q); globe.add(dot); dots[d.id] = dot;
+    if (!d.hq) {
+      const mid = hqV.clone().add(q).multiplyScalar(0.5); mid.normalize().multiplyScalar(1 + hqV.distanceTo(q) * 0.45);
+      const geo = new THREE.BufferGeometry().setFromPoints(new THREE.QuadraticBezierCurve3(hqV, mid, q).getPoints(64));
+      const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0x666c75, toneMapped: false }));
+      geo.setDrawRange(0, 0); globe.add(line); arcs[d.id] = line;
+    }
+  });
+  const G = { lat: 20, lon: -40, d: 6.2, draw: 0 };
+
+  /* ================= scroll y controles ================= */
+  document.documentElement.classList.add('has-3d');
+  const lenis = new Lenis({ lerp: 0.075, wheelMultiplier: 0.9 });
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((tt) => lenis.raf(tt * 1000)); gsap.ticker.lagSmoothing(0);
+  document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('click', (ev) => {
+    const tg = document.querySelector(a.getAttribute('href')); if (!tg) return;
+    ev.preventDefault(); lenis.scrollTo(tg, { offset: -64, duration: 1.2, easing: (x) => 1 - Math.pow(1 - x, 3) }); tg.setAttribute('tabindex', '-1'); tg.focus({ preventScroll: true });
+  }));
+  const sec = (id) => document.getElementById(id);
+  const ciclo = sec('ciclo'), simSec = sec('sim'), despSec = sec('despiece'), redSec = sec('red'), redGrid = redSec.querySelector('.red__grid');
+  const steps = [...document.querySelectorAll('#pasos li')];
+  const BOUNDS = [0.06, 0.22, 0.40, 0.62, 0.80];
+  let active = -1, prog = 0;
+  const setActive = (i) => { if (i === active) return; active = i; steps.forEach((li, k) => li.classList.toggle('is-on', k === i)); };
+
+  const tlScroll = gsap.timeline({ defaults: { ease: 'sine.inOut' }, scrollTrigger: { trigger: ciclo, start: 'top top', end: 'bottom bottom', scrub: 1.2,
+    onUpdate: (st) => { prog = st.progress; let i = 0; BOUNDS.forEach((b, k) => { if (prog >= b) i = k; }); setActive(prog < 0.03 ? -1 : i); } } });
+  addCycle(tlScroll, true);
+  const tlSim = gsap.timeline({ paused: true, defaults: { ease: 'sine.inOut' } });
+  addCycle(tlSim, false);
+  let simPhase = 0;
+
+  // explosionado con scroll: sale pieza a pieza, gira y vuelve a montarse
+  const pItems = [...document.querySelectorAll('#piezas li')];
+  let pActive = -1;
+  const setPActive = (i) => { if (i === pActive) return; pActive = i; pItems.forEach((li, k) => li.classList.toggle('is-on', k === i)); };
+  const tlExp = gsap.timeline({ defaults: { ease: 'power2.inOut' }, scrollTrigger: { trigger: despSec, start: 'top top', end: 'bottom bottom', scrub: 1.2,
+    onUpdate: (st) => {
+      const p = st.progress;
+      let i = 0; if (p > 0.08) i = Math.min(6, 1 + Math.floor((p - 0.08) / 0.07)); if (p > 0.56) i = -1;
+      setPActive(p < 0.02 ? -1 : i); despSec.classList.toggle('is-plano', p > 0.5);
+    } } });
+  tlExp.to(E, { spin: 0.5, duration: 0.08 }, 0);
+  EXP.forEach((_, i) => tlExp.to(E, { ['e' + i]: 1, duration: 0.09, ease: 'power3.out' }, 0.08 + 0.07 * i));
+  tlExp.to(E, { d: 1.3, duration: 0.30 }, 0.08);
+  tlExp.to(E, { spin: 1.6, duration: 0.24, ease: 'sine.inOut' }, 0.42);
+  tlExp.to(E, { plano: 1, duration: 0.14, ease: 'sine.inOut' }, 0.46);   // el gesto: del taller al plano
+  EXP.forEach((_, i) => tlExp.to(E, { ['e' + (5 - i)]: 0, duration: 0.08 }, 0.66 + 0.035 * i));
+  tlExp.to(E, { d: 0.8, spin: 2.0, duration: 0.2 }, 0.70);
+  tlExp.to({}, { duration: 0.08 }, 0.92);
+
+  // globo: al entrar gira hasta Europa y dibuja las rutas
+  const EU = { lat: 47, lon: 4 };
+  gsap.timeline({ scrollTrigger: { trigger: '#red-stage', start: 'top 95%', end: 'center 55%', scrub: 1.2 } })
+    .to(G, { lat: EU.lat, lon: EU.lon, d: 2.9, ease: 'power2.inOut', duration: 1 }, 0)
+    .to(G, { draw: 1, ease: 'none', duration: 0.5 }, 0.15);
+
+  // transición de hoja: la sección se queda quieta y la siguiente se desliza por encima, como un plano sobre otro
+  [['#sectores', '#elgoibar'], ['#red', '#contacto']].forEach(([a, b]) => {
+    const prev = document.querySelector(a), next = document.querySelector(b);
+    const fija = () => { prev.style.top = Math.min(0, innerHeight - prev.offsetHeight) + 'px'; };
+    prev.classList.add('hoja-bajo'); next.classList.add('hoja-sobre'); fija(); addEventListener('resize', fija);
+    gsap.fromTo(prev, { '--tapa': 0 }, { '--tapa': 0.55, ease: 'none', scrollTrigger: { trigger: next, start: 'top bottom', end: 'top top', scrub: true } });
+  });
+
+  /* --- etiquetas HTML ancladas al 3D --- */
+  const tagBox = sec('etiquetas'), cityBox = sec('ciudades');
+  const pTags = pItems.map((li) => { const el = document.createElement('span'); el.className = 'etiqueta'; el.textContent = li.querySelector('h3').textContent; tagBox.append(el); return el; });
+  const pName = pItems.map((li) => li.querySelector('h3').textContent);
+  const pCota = ['Carcasa · brida de 63 mm', 'Tapa · 4 tornillos', 'Motor · 24 V', 'Mordazas · 17 mm de carrera', 'Guías · ±0,02 mm', 'Husillo · rosca doble', 'Sensor · mide el ancho'];
+  const pAnchor = [['carcasa'], ['tapa'], ['motor'], ['mordaza_izq', 'mordaza_der'], ['guia_izq', 'guia_der'], ['husillo'], ['sensor']];
+  const ciudadEls = RED.map((d) => { const el = document.createElement('span'); el.className = 'ciudad' + (d.hq ? ' is-hq' : ''); el.dataset.id = d.id; el.textContent = d.ciudad; cityBox.append(el); return el; });
+  red.onPick = (d) => {
+    Object.entries(arcs).forEach(([k, a]) => a.material.color.set(k === d.id ? 0xedff21 : 0x666c75));
+    Object.entries(dots).forEach(([k, m]) => m.material.color.set(k === d.id ? 0xedff21 : (k === 'es' ? 0xeceef0 : 0xa6abb2)));
+    ciudadEls.forEach((el) => el.classList.toggle('is-on', el.dataset.id === d.id));
+    if (document.getElementById('red-stage').getBoundingClientRect().top < innerHeight * 0.6) gsap.to(G, { lat: d.lat * 0.5 + EU.lat * 0.5, lon: d.lon * 0.5 + EU.lon * 0.5, d: 2.6, duration: 1, ease: 'power2.out' });
+  };
+  red.onPick(RED[0]);
+
+  /* --- composición: oclusión ambiental y antialiasing --- */
+  let W = 0, H = 0;
+  const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+  const composer = new EffectComposer(renderer, rt);
+  composer.addPass(new RenderPass(scene, camera));
+  const ao = new GTAOPass(scene, camera, 1, 1);
+  ao.updateGtaoMaterial({ radius: 0.12, distanceExponent: 1.6, thickness: 0.6, scale: 1.0, samples: 16 });
+  ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
+  ao.blendIntensity = 0.85;
+  composer.addPass(ao); composer.addPass(new OutputPass());
+  const resize = () => { W = innerWidth; H = innerHeight; renderer.setSize(W, H, false); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(W, H); camera.aspect = W / H; };
+  addEventListener('resize', resize);
+
+  const R = ['j1', 'j2', 'j3', 'j4'].map((k) => sec('r-' + k));
+  const rGr = sec('r-gr'), rF = sec('r-f'), tcpEl = sec('tcp'), tcpT = sec('tcp-t');
+  const poster = sec('poster'), cStage = sec('ciclo-stage'), sStage = sec('sim-stage'), dStage = sec('desp-stage'), gStage = sec('red-stage');
+  const ptr = { x: 0, y: 0, sx: 0, sy: 0 };
+  addEventListener('pointermove', (e) => { ptr.x = (e.clientX / innerWidth) * 2 - 1; ptr.y = (e.clientY / innerHeight) * 2 - 1; }, { passive: true });
+  const v = new THREE.Vector3(), v2 = new THREE.Vector3(), box = new THREE.Box3(), mA = new THREE.Matrix4();
+  const LAMBDA = { j1: 7, j2: 8, j3: 9.5, j4: 12, j5: 13, j6: 14 };
+  const qs = { ...ik(HERO.r, HERO.z, HERO.yaw, 0, HERO.tilt) }; let gs = 24;
+  const smooth = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
+  const seen = (el) => { const r = el.getBoundingClientRect(); return Math.max(0, Math.min(r.bottom, H) - Math.max(r.top, 0)); };
+  const frameTo = (r, hpx) => {
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    camera.zoom = hpx / H; camera.setViewOffset(W, H, W / 2 - cx, H / 2 - cy, W, H); camera.updateProjectionMatrix();
+  };
+  const project = (vec) => { vec.project(camera); return [(vec.x * 0.5 + 0.5) * W, (-vec.y * 0.5 + 0.5) * H]; };
+  const Lr = (a, b, x) => a + (b - a) * x;
+
+  const clock = new THREE.Clock(); let first = true, t = 0, slow = 0, frames = 0, slowMode = false;
+  function frame() {
+    requestAnimationFrame(frame);
+    const dt = Math.min(clock.getDelta(), 0.05); t += dt;
+    // ¿qué escena se ve más? Solo se pinta esa.
+    const tapaRed = sec('contacto').getBoundingClientRect().top;   // el cierre se desliza sobre el globo
+    const armVis = Math.max(seen(poster), seen(ciclo), seen(simSec)), expVis = seen(despSec), gloVis = tapaRed < H * 0.2 ? 0 : seen(redGrid);
+    const best = Math.max(armVis, expVis, gloVis);
+    tcpEl.classList.remove('is-on');
+    if (best <= 0) { pTags.forEach((el) => { el.style.opacity = 0; }); ciudadEls.forEach((el) => { el.style.opacity = 0; }); return; }
+    const showT = best === expVis ? 'exp' : best === gloVis ? 'glo' : 'arm';
+    armRoot.visible = showT === 'arm'; pinzaRoot.visible = showT === 'exp'; globeRoot.visible = showT === 'glo';
+    if (showT !== 'glo' && canvas.style.clipPath) canvas.style.clipPath = '';
+    ao.enabled = !slowMode && showT !== 'glo';
+    if (showT !== 'exp') { pTags.forEach((el) => { el.style.opacity = 0; }); ao.blendIntensity = 0.85; }
+    if (showT !== 'glo') ciudadEls.forEach((el) => { el.style.opacity = 0; });
+
+    if (showT !== 'exp') scene.environmentIntensity = 0.85;
+    if (showT === 'arm') {
+      const ct = ciclo.getBoundingClientRect().top, st = simSec.getBoundingClientRect().top;
+      const k = smooth(1 - ct / H), k2 = smooth(1 - (st + 80) / H);
+      const rp = poster.getBoundingClientRect(), rc = cStage.getBoundingClientRect(), rs = sStage.getBoundingClientRect();
+      const r = { left: Lr(Lr(rp.left, rc.left, k), rs.left, k2), top: Lr(Lr(rp.top, rc.top, k), rs.top, k2),
+        width: Lr(Lr(rp.width, rc.width, k), rs.width, k2), height: Lr(Lr(rp.height, rc.height, k), rs.height, k2) };
+      frameTo(r, r.height);
+      const PV = VIEW.poster, WV = VIEW.sim;
+      holder.position.set(-Lr(Lr(PV.t[0], S.tx, k), WV.t[0], k2), -Lr(Lr(PV.t[1], S.ty, k), WV.t[1], k2), -Lr(Lr(PV.t[2], S.tz, k), WV.t[2], k2));
+      camera.position.set(0, 0, Lr(Lr(PV.d, S.d, k), WV.d, k2));
+      // simulador: el ciclo se repite al ritmo de la cadencia elegida
+      if (k2 > 0.5 && seen(simSec) > H * 0.3) { simPhase = (simPhase + dt / sim.periodo) % 1; tlSim.progress(simPhase); }
+      ptr.sx += (ptr.x - ptr.sx) * Math.min(1, dt * 3); ptr.sy += (ptr.y - ptr.sy) * Math.min(1, dt * 3);
+      const calm = Math.min(1, t / 2) * (1 - k);
+      pivot.rotation.set(PITCH0 + ptr.sy * 0.03 * calm, YAW0 + ptr.sx * 0.05 * calm, 0);
+      const target = ik(S.r, S.z, S.yaw, S.roll, S.tilt);
+      target.j1 += (ptr.sx * 0.16 + Math.sin(t * 0.37) * 0.04 + Math.sin(t * 0.91) * 0.012) * calm;
+      target.j2 += Math.sin(t * 0.29 + 1.3) * 0.018 * calm;
+      target.j4 += (ptr.sy * 0.12 + Math.sin(t * 0.53) * 0.05) * calm;
+      target.j6 += Math.sin(t * 0.23) * 0.22 * calm;
+      for (const j in LAMBDA) qs[j] += (target[j] - qs[j]) * (1 - Math.exp(-LAMBDA[j] * dt));
+      // en el simulador, la pieza es la del atajo elegido y la pinza cierra a su ancho
+      const forma = k2 > 0.5 ? sim.forma : 'soporte'; verForma(forma);
+      const gc = GRIP[forma], gT = S.grip >= 24 ? 24 : 24 - (24 - S.grip) * (24 - gc) / (24 - 18.9);
+      gs += (gT - gs) * (1 - Math.exp(-16 * dt));
+      setPose(qs, gs);
+      if (S.carry) part.matrix.identity(); else part.matrix.copy(rel(tcp).invert().multiply(S.at ? matB : matA));
+      part.matrix.decompose(part.position, part.quaternion, part.scale);
+      // la mesa aparece cuando el ciclo ya ocupa la pantalla, no bajo el título del capítulo
+      const kc = Math.max(smooth((k - 0.55) / 0.45), k2);
+      cellMats.forEach((m) => { m.opacity = kc; }); cell.forEach((o) => { o.visible = kc > 0.01; });
+      catcher.material.opacity = 0.28 * (1 - kc); catcher.visible = kc < 0.98;
+      if (ct < H * 0.5 && ciclo.getBoundingClientRect().bottom > 0) {
+        R.forEach((el, i) => { el.textContent = fmt(qs['j' + (i + 1)] / DEG, 1) + '°'; });
+        rGr.textContent = fmt(2 * gs, 1) + ' mm'; rF.textContent = gs < 19.3 ? '140 N' : 'sin pieza';
+        if (prog > 0.05 && prog < 0.97) {
+          tcp.getWorldPosition(v); mA.copy(gltf.scene.matrixWorld).invert(); const lp = v.clone().applyMatrix4(mA);
+          const [x, y] = project(v); tcpEl.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+          tcpT.textContent = `TCP  X ${Math.round(lp.x * 1000)}  Y ${Math.round(-lp.z * 1000)}  Z ${Math.round(lp.y * 1000)}`;
+          tcpEl.classList.add('is-on');
+        }
+      }
+    } else if (showT === 'exp') {
+      scene.environmentIntensity = 1.15;
+      uPlano.value = E.plano; tinta.opacity = E.plano; aristas.forEach((l) => { l.visible = E.plano > 0.01; });
+      ao.blendIntensity = 0.85 * (1 - E.plano);
+      despSec.style.setProperty('--plano', E.plano.toFixed(3));
+      tagBox.classList.toggle('is-plano', E.plano > 0.6);
+      const r = dStage.getBoundingClientRect();
+      frameTo(r, Math.min(r.height, r.width * 1.05) * 1.6); // la pinza a ~150 %: es la protagonista del capítulo
+      camera.position.set(0, 0, E.d);
+      pPivot.rotation.set(PITCH0 * 0.9, YAW0 + E.spin * 0.6, 0);
+      PN.forEach((n) => P(n).position.copy(pBase[n]));
+      EXP.forEach((s, i) => { const e = E['e' + i]; s.parts.forEach(([n, x, y, z]) => P(n).position.set(pBase[n].x + x * e, pBase[n].y + y * e, pBase[n].z + z * e)); });
+      pinzaRoot.updateMatrixWorld(true);
+      const open = Math.max(E.e0, E.e2, E.e5), cotas = E.plano > 0.85 && Math.min(E.e0, E.e1, E.e2, E.e3, E.e4, E.e5) > 0.9;
+      const pos = [];
+      pAnchor.forEach((names, i) => {
+        v.set(0, 0, 0); names.forEach((n) => { box.setFromObject(P(n)); v.add(box.getCenter(v2)); }); v.multiplyScalar(1 / names.length);
+        const [x, y] = project(v); const el = pTags[i];
+        let xr = x;
+        if (i === pActive) names.forEach((n) => { box.setFromObject(P(n)); for (const cx of [box.min.x, box.max.x]) for (const cy of [box.min.y, box.max.y]) for (const cz of [box.min.z, box.max.z]) { v2.set(cx, cy, cz); xr = Math.max(xr, project(v2)[0]); } });
+        if (cotas) { pos.push({ i, x, y }); el.textContent = pCota[i]; return; }
+        el.textContent = pName[i]; el.classList.remove('izq');
+        const lx = Math.max(xr + 28, x + 64);
+        el.style.setProperty('--lead', (lx - x).toFixed(1) + 'px');
+        el.style.transform = `translate(${lx.toFixed(1)}px,${(y - 12).toFixed(1)}px)`;
+        el.style.opacity = open > 0.6 && i === pActive ? 1 : 0; el.classList.toggle('is-on', i === pActive); // solo la pieza activa: así las etiquetas no se pisan
+      });
+      if (cotas) {   // el plano: todas las cotas a la vez, repartidas a los dos lados y sin pisarse
+        const cx = r.left + r.width / 2;
+        for (const lado of [-1, 1]) {
+          const grupo = pos.filter((q) => (q.x < cx ? -1 : 1) === lado).sort((a, b) => a.y - b.y);
+          let last = -1e9;
+          grupo.forEach((q) => { q.ty = Math.max(q.y, last + 34); last = q.ty; });
+          grupo.forEach((q) => { const el = pTags[q.i], w = el.offsetWidth;
+            const lx = lado > 0 ? Math.min(W - w - 24, Math.max(q.x + 90, cx + r.width * 0.2)) : Math.max(24, Math.min(q.x - 90, cx - r.width * 0.2) - w);
+            el.classList.toggle('izq', lado < 0); el.classList.remove('is-on');
+            el.style.setProperty('--lead', (lado > 0 ? lx - q.x : q.x - lx - w).toFixed(1) + 'px');
+            el.style.setProperty('--dy', (q.y - q.ty).toFixed(1) + 'px');
+            el.style.transform = `translate(${lx.toFixed(1)}px,${(q.ty - 12).toFixed(1)}px)`; el.style.opacity = 1; });
+        }
+      }
+    } else {
+      const r = gStage.getBoundingClientRect();
+      // el globo se ve como por una ventana: recortado a su escenario, sin pisar el texto ni la tabla
+      canvas.style.clipPath = `inset(${Math.max(0, r.top)}px ${Math.max(0, W - r.right)}px ${Math.max(0, H - Math.min(r.bottom, tapaRed))}px ${Math.max(0, r.left)}px)`;
+      frameTo(r, r.height * 0.95);
+      camera.position.set(0, 0, G.d);
+      globe.rotation.set(G.lat * DEG, -G.lon * DEG + Math.sin(t * 0.2) * 0.02, 0, 'XYZ');
+      Object.values(arcs).forEach((a) => a.geometry.setDrawRange(0, Math.floor(65 * G.draw)));
+      globeRoot.updateMatrixWorld(true);
+      RED.forEach((d, i) => {
+        dots[d.id].getWorldPosition(v); const facing = v.z > 0.2;
+        const [x, y] = project(v.clone()); const el = ciudadEls[i];
+        el.style.transform = `translate(${(x + 10).toFixed(1)}px,${(y - 10).toFixed(1)}px)`;
+        const inside = x > r.left && x < r.right - 60 && y > r.top + 10 && y < Math.min(r.bottom, tapaRed) - 10;
+        const shown = d.hq || el.classList.contains('is-on') || el.classList.contains('is-hover');
+        el.style.opacity = shown && facing && inside && G.draw > 0.5 ? 1 : 0;
+      });
+    }
+
+    composer.render(dt);
+    if (frames < 240) { frames++; if (dt > 0.02) slow++; if (frames === 240 && slow > 120) { slowMode = true; renderer.setPixelRatio(1); resize(); } }
+    if (first) { first = false; document.documentElement.classList.add('is-3d'); }
+  }
+
+  // compilar antes de empezar, contra el buffer intermedio (lineal), para que no haya tirones.
+  // Cada escena por separado: sus luces cambian el programa de sombreado, así que se compila
+  // con la misma combinación de luces que tendrá al pintarse sola.
+  setPose(ik(HERO.r, HERO.z, HERO.yaw, 0, HERO.tilt), 24);
+  cell.forEach((o) => { o.visible = true; }); catcher.visible = true; resize();
+  cellMats.forEach((m) => { m.opacity = 0.5; }); Object.values(FORMAS).forEach((o) => { o.visible = true; }); aristas.forEach((l) => { l.visible = true; });
+  const culled = []; scene.traverse((o) => { if (o.frustumCulled) { culled.push(o); o.frustumCulled = false; } });
+  for (const root of [armRoot, pinzaRoot, globeRoot]) {
+    armRoot.visible = root === armRoot; pinzaRoot.visible = root === pinzaRoot; globeRoot.visible = root === globeRoot;
+    renderer.setRenderTarget(composer.readBuffer); await renderer.compileAsync(scene, camera); renderer.setRenderTarget(null);
+    composer.render(0); await new Promise(requestAnimationFrame);
+  }
+  culled.forEach((o) => { o.frustumCulled = true; }); Object.values(FORMAS).forEach((o) => { o.visible = false; }); aristas.forEach((l) => { l.visible = false; });
+  armRoot.visible = true; pinzaRoot.visible = globeRoot.visible = false;
+  ScrollTrigger.refresh();
+  requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
